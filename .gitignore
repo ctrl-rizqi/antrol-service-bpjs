@@ -1,0 +1,5 @@
+node_modules
+dist
+
+# PNPM
+pnpm-lock.yaml

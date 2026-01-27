@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model VisitEvent {
+  id         BigInt   @id @default(autoincrement())
+  visit_id   String   @unique @db.VarChar(50) // no rawat
+  event_time DateTime // Waktu REGISTER terjadi di sistem sumber
+
+  // Dimensi Agregasi
+  tanggal        DateTime @db.Date // start of day
+  jam_registrasi String   @db.VarChar(10) // HH:MM
+  poli_id        String   @db.VarChar(20)
+  dokter_id      String   @db.VarChar(20)
+
+  // Patient essential data - needed for BPJS submission
+  // Nullable during migration, but should be populated
+  no_rkm_medis  String? @db.VarChar(50)
+  nomor_antrean String? @db.VarChar(20)
+  // Antrean 
+  angka_antrean Int?
+
+  // Snapshot jadwal + kuota dari polling time
+  // Contains: jam_praktek, kuota_jkn, sisa_kuota_jkn, kuota_nonjkn, sisa_kuota_nonjkn, estimasi_dilayani
+  payload Json?
+
+  // Track progress of all tasks (1=REGISTER, 3=CHECKIN, 4=START, 5=FINISH)
+  // {
+  //   "1": { status: "DRAFT" | "READY_BPJS" | "BLOCKED_BPJS" | "SENT_BPJS" | "FAILED_BPJS", blocked_reason?, sentAt?, failedReason? },
+  //   "3": { status: "DRAFT" | "SENT_BPJS" | "FAILED_BPJS", sentAt?, failedReason? },
+  //   "4": { status: "DRAFT" | "SENT_BPJS" | "FAILED_BPJS", sentAt?, failedReason? },
+  //   "5": { status: "DRAFT" | "SENT_BPJS" | "FAILED_BPJS", sentAt?, failedReason? }
+  // }
+  task_progress Json?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@index([event_time])
+  @@index([tanggal, poli_id, dokter_id])
+}
+
+// Model Karantina jika data cacat atau perlu reprocess
+model VisitEventQuarantine {
+  id         BigInt   @id @default(autoincrement())
+  visit_id   String   @unique @db.VarChar(50) // no rawat
+  event_time DateTime // Waktu REGISTER terjadi di sistem sumber
+
+  severity  SeverityLevel @default(LOW) // e.g., "LOW", "MEDIUM", "HIGH"
+  reason    Json          @db.Json // Reason for quarantine
+  createdAt DateTime      @default(now())
+}
+
+// Snapshot jadwal + kuota dari VisitEvent
+model DoctorScheduleQuota {
+  id BigInt @id @default(autoincrement())
+
+  dokter_id   String @db.VarChar(20)
+  poli_id     String @db.VarChar(20)
+  nama_dokter String @db.VarChar(100)
+  nama_poli   String @db.VarChar(100)
+
+  tanggal DateTime // YYYY-MM-DD 00:00:00
+
+  jam_mulai   String @db.VarChar(10) // HH:MM
+  jam_selesai String @db.VarChar(10) // HH:MM
+
+  kuota_jkn Int
+
+  source    String // "BPJS HFIS"
+  fetchedAt DateTime // Waktu data diambil dari sistem sumber
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@unique([poli_id, dokter_id, tanggal, jam_mulai])
+  @@index([tanggal, poli_id, dokter_id])
+}
+
+// Cursor sebagai penanda terakhir sinkronisasi data jadwal + kuota
+model VisitEventCursor {
+  id         BigInt          @id @default(autoincrement())
+  event_type VisitEventType? @default(REGISTER) // Jenis event terakhir yang diproses
+  event_time DateTime // Waktu REGISTER terjadi di sistem sumber
+  createdAt  DateTime        @default(now())
+}
+
+enum VisitEventType {
+  REGISTER
+  CHECKIN
+  START
+  FINISH
+}
+
+enum TaskStatus {
+  DRAFT
+  READY_BPJS
+  BLOCKED_BPJS
+  SENT_BPJS
+  FAILED_BPJS
+}
+
+enum SeverityLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
