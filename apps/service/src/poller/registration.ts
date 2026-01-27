@@ -1,10 +1,13 @@
 import { fetchRegistrations } from "../khanza/khanza.query";
 import prisma from "../lib/prisma";
-import { taskProgressProps } from "../types/registration";
 import { validateRegistration } from "../validator/registation-validator";
 import { aggregatorJadwal, AggregatedJadwal } from "../domain/quota.aggregator";
 import { normalizeRegistrationDate } from "../utils/formatDate";
 import { dateCursor, updateDateCursor } from "../job/cursors";
+import {
+  TaskProgressProps,
+  validateTaskProgress,
+} from "../validator/task-progress-validator";
 
 type RegistrationRow = Awaited<ReturnType<typeof fetchRegistrations>>[number];
 
@@ -56,7 +59,7 @@ async function createRegistration(
   eventTime: Date,
   tanggalOnly: string,
   aggregatedData: AggregatedJadwal,
-  taskProgress: any,
+  taskProgress: TaskProgressProps,
 ): Promise<boolean> {
   // Cek apakah sudah ada
   const existing = await prisma.visitEvent.findUnique({
@@ -105,7 +108,10 @@ async function createRegistration(
 /**
  * Process single registration row
  */
-async function processRegistrationRow(row: RegistrationRow, taskProgress: any) {
+async function processRegistrationRow(
+  row: RegistrationRow,
+  taskProgress: TaskProgressProps,
+) {
   const { tanggalOnly, eventTime } = normalizeRegistrationDate(
     row.tgl_registrasi,
     row.jam_registrasi,
@@ -137,6 +143,9 @@ async function processRegistrationRow(row: RegistrationRow, taskProgress: any) {
       row.jam_registrasi,
     );
 
+    // cek apakah taskProgress valid (zod)
+    validateTaskProgress(taskProgress);
+
     // Buat registrasi
     await createRegistration(
       row,
@@ -154,6 +163,48 @@ async function processRegistrationRow(row: RegistrationRow, taskProgress: any) {
   }
 }
 
+// check task_id_x jika sudah ada
+async function checkTaskId(row: RegistrationRow): Promise<TaskProgressProps> {
+  const tasks: TaskProgressProps["task"] = [];
+
+  // Helper untuk menambahkan task ke list
+  const addTask = (id: number, dateVal: any) => {
+    if (dateVal) {
+      tasks.push({
+        task_id: id,
+        status: "DONE",
+        // Gunakan tanggal dari row jika valid (Date object), jika tidak gunakan waktu sekarang
+        date: dateVal instanceof Date ? dateVal : new Date(),
+      });
+    }
+  };
+
+  // Task 0: Data registrasi lengkap
+  // Pastikan data row memiliki field mandatory sebelum menandai task 0 sebagai DONE
+  if (
+    row.no_rawat &&
+    row.tgl_registrasi &&
+    row.jam_registrasi &&
+    row.kd_poli &&
+    row.kd_dokter
+  ) {
+    tasks.push({
+      task_id: 0,
+      status: "DONE",
+      date: new Date(),
+    });
+  }
+
+  // Cek semua task_id (3-7) dan gabungkan
+  addTask(3, row.task_id_3);
+  addTask(4, row.task_id_4);
+  addTask(5, row.task_id_5);
+  addTask(6, row.task_id_6);
+  addTask(7, row.task_id_7);
+
+  return { task: tasks };
+}
+
 export async function pollRegisterEvent() {
   try {
     // Initialize cursor sekali di awal
@@ -162,12 +213,18 @@ export async function pollRegisterEvent() {
     });
 
     while (true) {
-      // Format date to YYYY-MM-DD
-      const dateString = cursorDate.date.toISOString().split("T")[0];
-      const today = new Date().toISOString().split("T")[0];
+      // Helper untuk konversi ke WIB (UTC+7) agar tanggal sesuai zona waktu Indonesia
+      const toWIBDateString = (date: Date) => {
+        const offset = 7 * 60 * 60 * 1000;
+        return new Date(date.getTime() + offset).toISOString().split("T")[0];
+      };
+
+      // Format date to YYYY-MM-DD (WIB)
+      const dateString = toWIBDateString(cursorDate.date);
+      const today = toWIBDateString(new Date());
 
       // Cek apakah cursor sudah catch up dengan hari ini
-      const isCaughtUp = dateString >= today;
+      const isCaughtUp = dateString > today;
 
       if (isCaughtUp) {
         console.log(
@@ -179,15 +236,6 @@ export async function pollRegisterEvent() {
       }
 
       const rows = await fetchRegistrations(dateString, "00:00:00");
-      const taskProgress = {
-        task: [
-          {
-            task_id: 0,
-            status: "DONE",
-            date: new Date(),
-          },
-        ],
-      } satisfies taskProgressProps;
 
       console.log(
         `[POLL] Fetched ${rows.length} registrations for ${dateString}`,
@@ -196,8 +244,25 @@ export async function pollRegisterEvent() {
       let processedCount = 0;
       let errorCount = 0;
 
+      // pengecualian pada kode poli tertentu
+      // ambil semua daftar pengecualian poli
+      const exceptions = await prisma.poliException.findMany({
+        select: { poli_id: true },
+      });
+      const exceptionSet = new Set(exceptions.map((e) => e.poli_id));
+
       for (const row of rows) {
+        // cek apakah poli di pengecualian
+        if (exceptionSet.has(row.kd_poli)) {
+          console.log(
+            `[POLL] Skipping registration for poli exception: ${row.no_rawat}`,
+          );
+          processedCount++;
+          continue;
+        }
+
         try {
+          const taskProgress = await checkTaskId(row);
           await processRegistrationRow(row, taskProgress);
           processedCount++;
         } catch (error) {
@@ -218,7 +283,7 @@ export async function pollRegisterEvent() {
       if (rows.length === 0 || processedCount + errorCount === rows.length) {
         const nextDate = new Date(cursorDate.date);
         nextDate.setDate(nextDate.getDate() + 1);
-        const nextDateString = nextDate.toISOString().split("T")[0];
+        const nextDateString = toWIBDateString(nextDate);
 
         // Batasi: cursor tidak boleh melewati hari ini
         if (nextDateString <= today) {

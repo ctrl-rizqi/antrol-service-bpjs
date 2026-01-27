@@ -95,6 +95,48 @@ model VisitEventCursor {
   createdAt  DateTime        @default(now())
 }
 
+// Log Queue ketika pengiriman di proses
+model BpjsAntreanQueue {
+  id          BigInt    @id @default(autoincrement())
+  visit_id    String    @db.VarChar(50) // no rawat
+  task_id     Int
+  event_time  DateTime
+  payload     Json?
+  status      Status    @default(PENDING)
+  retry_count Int       @default(0)
+  last_error  String?
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
+
+  @@unique([visit_id, task_id])
+  @@index([status])
+}
+
+// Log Sukses ketika proses selesai dari queue
+model BpjsAntreanLogs {
+  id               BigInt    @id @default(autoincrement())
+  queue_id         BigInt
+  request_payload  Json
+  response_payload Json
+  http_code        Int
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime? @updatedAt
+
+  @@index([queue_id])
+}
+
+// Pengecualian POLI
+model PoliException {
+  id        BigInt    @id @default(autoincrement())
+  poli_id   String    @db.VarChar(20)
+  nama_poli String    @db.VarChar(100)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@unique([poli_id])
+}
+
 enum VisitEventType {
   REGISTER
   CHECKIN
@@ -114,4 +156,10 @@ enum SeverityLevel {
   LOW
   MEDIUM
   HIGH
+}
+
+enum Status {
+  PENDING
+  SEND
+  FAILED
 }
