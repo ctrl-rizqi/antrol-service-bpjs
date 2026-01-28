@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `VisitEventCursor` MODIFY `event_type` ENUM('POLLER', 'REGISTER', 'CHECKIN', 'START', 'FINISH') NULL DEFAULT 'REGISTER';

@@ -6,6 +6,7 @@ import { khanzaDb } from "./khanza/khanza.client";
 
 // Scheduler JOB
 import { startPollerScheduler } from "./job/poller.scheduler";
+import { startQueuePoller } from "./job/queue.sheduler";
 
 // Check Database Connection
 async function checkDatabaseConnection() {
@@ -35,6 +36,8 @@ async function checkDatabaseSIMRS() {
 
   // Start Poller Scheduler
   startPollerScheduler();
+  // Start Queue Poller
+  startQueuePoller();
 
   const app: Application = express();
   const PORT = process.env.PORT || 3000;

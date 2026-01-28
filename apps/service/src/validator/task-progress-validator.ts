@@ -5,6 +5,7 @@ const taskSchema = z.object({
   task_id: z.number().int().min(0).max(7),
   status: z.enum(["DONE", "FAILED", "SEND"]),
   date: z.date(),
+  original_date: z.date().optional(),
 });
 
 const taskProgressSchema = z.object({

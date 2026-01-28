@@ -1,9 +1,10 @@
 import { fetchRegistrations } from "../khanza/khanza.query";
 import prisma from "../lib/prisma";
 import { validateRegistration } from "../validator/registation-validator";
-import { aggregatorJadwal, AggregatedJadwal } from "../domain/quota.aggregator";
-import { normalizeRegistrationDate } from "../utils/formatDate";
-import { dateCursor, updateDateCursor } from "../job/cursors";
+import { aggregatorJadwal } from "../domain/quota.aggregator";
+import { normalizeRegistrationDate, toFaceValueUTC } from "../utils/formatDate";
+import { dateCursor, updateDateCursor } from "../domain/cursors";
+import { AggregatedJadwal } from "../validator/aggregated-validator";
 import {
   TaskProgressProps,
   validateTaskProgress,
@@ -72,26 +73,48 @@ async function createRegistration(
   }
 
   try {
-    await prisma.visitEvent.create({
-      data: {
-        visit_id: row.no_rawat,
-        event_time: eventTime,
-        tanggal: new Date(tanggalOnly),
-        jam_registrasi: row.jam_registrasi,
-        poli_id: aggregatedData.kodepoli,
-        dokter_id: aggregatedData.kodedokter,
-        no_rkm_medis: row.no_rkm_medis,
-        nomor_antrean: row.no_reg,
-        angka_antrean: aggregatedData.nomorantrean,
-        payload: JSON.stringify({
-          jenis_kunjungan: row.jenis_kunjungan,
-          status_poli: row.pasien_baru,
-          kuota: aggregatedData.kuotajkn,
-          sisa_kuota: aggregatedData.sisakuotajkn,
-          estimasi_dilayani: aggregatedData.estimasidilayani,
-        }),
-        task_progress: taskProgress,
-      },
+    // Gunakan interactive transaction agar bisa mendapatkan ID dari VisitEvent yang baru dibuat
+    await prisma.$transaction(async (tx) => {
+      const createdEvent = await tx.visitEvent.create({
+        data: {
+          visit_id: row.no_rawat,
+          event_time: eventTime,
+          tanggal: eventTime,
+          jam_registrasi: row.jam_registrasi,
+          poli_id: aggregatedData.kodepoli,
+          dokter_id: aggregatedData.kodedokter,
+          no_rkm_medis: row.no_rkm_medis,
+          nomor_antrean: row.no_reg,
+          angka_antrean: aggregatedData.nomorantrean,
+          payload: JSON.stringify({
+            jenis_kunjungan: row.jenis_kunjungan,
+            status_poli: row.pasien_baru,
+            jampraktek: aggregatedData.jampraktek,
+            namapoli: aggregatedData.namapoli,
+            namadokter: aggregatedData.namadokter,
+            kuota: aggregatedData.kuotajkn,
+            sisa_kuota: aggregatedData.sisakuotajkn,
+            estimasi_dilayani: aggregatedData.estimasidilayani,
+          }),
+        },
+      });
+
+      // Create EventTasks linked to the created VisitEvent ID
+      if (taskProgress.task.length > 0) {
+        await Promise.all(
+          taskProgress.task.map((task) =>
+            tx.eventTask.create({
+              data: {
+                event_time: task.date, // Gunakan waktu spesifik per task
+                original_event_time: task.original_date, // Simpan waktu asli jika ada clamping
+                task_id: task.task_id,
+                status: task.status,
+                visit_event_id: createdEvent.id,
+              },
+            }),
+          ),
+        );
+      }
     });
 
     console.log(`[CREATE] Registration created: ${row.no_rawat}`);
@@ -112,25 +135,33 @@ async function processRegistrationRow(
   row: RegistrationRow,
   taskProgress: TaskProgressProps,
 ) {
-  const { tanggalOnly, eventTime } = normalizeRegistrationDate(
+  let { tanggalOnly, eventTime } = normalizeRegistrationDate(
     row.tgl_registrasi,
     row.jam_registrasi,
   );
 
+  // FIX: Adjust eventTime to ignore timezone (store as Face Value in UTC)
+  eventTime = toFaceValueUTC(eventTime);
+
   console.log(`[PROCESS] visit_id: ${row.no_rawat}, tanggal: ${tanggalOnly}`);
 
   // Validasi data
-  const { status, message } = validateRegistration({
-    no_rawat: row.no_rawat,
-    tanggal: tanggalOnly,
-    jam_registrasi: row.jam_registrasi,
-    poli_id: row.kd_poli,
-    dokter_id: row.kd_dokter.toString(),
-    jenis_kunjungan: row.jenis_kunjungan as unknown as 1 | 2 | 3 | 4,
+  const validation = validateRegistration({
+    data: {
+      no_rawat: row.no_rawat,
+      tanggal: tanggalOnly,
+      jam_registrasi: row.jam_registrasi,
+      poli_id: row.kd_poli,
+      dokter_id: row.kd_dokter,
+      jenis_kunjungan: row.jenis_kunjungan,
+    },
   });
 
-  if (!status) {
-    await quarantineRegistration(row, eventTime, message, "LOW");
+  if (!validation.success) {
+    const errorMessage = validation.message;
+    if (errorMessage) {
+      await quarantineRegistration(row, eventTime, errorMessage.errors, "LOW");
+    }
     return;
   }
 
@@ -166,15 +197,39 @@ async function processRegistrationRow(
 // check task_id_x jika sudah ada
 async function checkTaskId(row: RegistrationRow): Promise<TaskProgressProps> {
   const tasks: TaskProgressProps["task"] = [];
+  let lastValidTime: Date | null = null;
 
   // Helper untuk menambahkan task ke list
   const addTask = (id: number, dateVal: any) => {
     if (dateVal) {
+      // FIX: Handle Timezone Shift using helper
+      let date = toFaceValueUTC(dateVal as Date | string);
+
+      let originalDate: Date | undefined;
+
+      // Fallback jika invalid date
+      if (isNaN(date.getTime())) {
+        // Jika invalid, gunakan lastValidTime jika ada, atau now
+        date = lastValidTime ? new Date(lastValidTime) : new Date();
+      }
+
+      // Validasi Sekuensial: Task saat ini tidak boleh lebih awal dari task sebelumnya
+      if (lastValidTime && date < lastValidTime) {
+        console.warn(
+          `[WARN] Time clamping detected for visit_id: ${row.no_rawat}, task_id: ${id}. Original: ${date.toISOString()}, Clamped to: ${lastValidTime.toISOString()}`,
+        );
+        originalDate = new Date(date); // Simpan tanggal asli sebelum diubah
+        date = new Date(lastValidTime);
+      }
+
+      // Update lastValidTime untuk task berikutnya
+      lastValidTime = date;
+
       tasks.push({
-        task_id: id,
+        task_id: id as any,
         status: "DONE",
-        // Gunakan tanggal dari row jika valid (Date object), jika tidak gunakan waktu sekarang
-        date: dateVal instanceof Date ? dateVal : new Date(),
+        date: date,
+        original_date: originalDate,
       });
     }
   };
@@ -188,10 +243,19 @@ async function checkTaskId(row: RegistrationRow): Promise<TaskProgressProps> {
     row.kd_poli &&
     row.kd_dokter
   ) {
+    let { eventTime } = normalizeRegistrationDate(
+      row.tgl_registrasi,
+      row.jam_registrasi,
+    );
+
+    // FIX: Adjust eventTime to ignore timezone (store as Face Value in UTC)
+    eventTime = toFaceValueUTC(eventTime);
+    lastValidTime = eventTime;
+
     tasks.push({
       task_id: 0,
       status: "DONE",
-      date: new Date(),
+      date: eventTime,
     });
   }
 
@@ -209,7 +273,7 @@ export async function pollRegisterEvent() {
   try {
     // Initialize cursor sekali di awal
     let cursorDate = await dateCursor({
-      eventType: "REGISTER",
+      eventType: "POLLER",
     });
 
     while (true) {
@@ -289,7 +353,7 @@ export async function pollRegisterEvent() {
         if (nextDateString <= today) {
           // Update cursor di database
           await updateDateCursor({
-            eventType: "REGISTER",
+            eventType: "POLLER",
             newDate: nextDate,
           });
 

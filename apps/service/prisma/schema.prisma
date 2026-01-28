@@ -21,11 +21,11 @@ model VisitEvent {
   tanggal        DateTime @db.Date // start of day
   jam_registrasi String   @db.VarChar(10) // HH:MM
   poli_id        String   @db.VarChar(20)
-  dokter_id      String   @db.VarChar(20)
+  dokter_id      Int
 
   // Patient essential data - needed for BPJS submission
   // Nullable during migration, but should be populated
-  no_rkm_medis  String? @db.VarChar(50)
+  no_rkm_medis  String  @db.VarChar(50)
   nomor_antrean String? @db.VarChar(20)
   // Antrean 
   angka_antrean Int?
@@ -34,20 +34,34 @@ model VisitEvent {
   // Contains: jam_praktek, kuota_jkn, sisa_kuota_jkn, kuota_nonjkn, sisa_kuota_nonjkn, estimasi_dilayani
   payload Json?
 
-  // Track progress of all tasks (1=REGISTER, 3=CHECKIN, 4=START, 5=FINISH)
-  // {
-  //   "1": { status: "DRAFT" | "READY_BPJS" | "BLOCKED_BPJS" | "SENT_BPJS" | "FAILED_BPJS", blocked_reason?, sentAt?, failedReason? },
-  //   "3": { status: "DRAFT" | "SENT_BPJS" | "FAILED_BPJS", sentAt?, failedReason? },
-  //   "4": { status: "DRAFT" | "SENT_BPJS" | "FAILED_BPJS", sentAt?, failedReason? },
-  //   "5": { status: "DRAFT" | "SENT_BPJS" | "FAILED_BPJS", sentAt?, failedReason? }
-  // }
-  task_progress Json?
+  // Relasi dari EventTask
+  EventTasks EventTask[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 
   @@index([event_time])
   @@index([tanggal, poli_id, dokter_id])
+}
+
+model EventTask {
+  id      BigInt @id @default(autoincrement())
+  task_id Int    @default(0) // "0", "3", "4", "5"
+
+  // Relasi dari VisitEvent
+  visit_event_id BigInt
+  VisitEvent     VisitEvent @relation(fields: [visit_event_id], references: [id], onDelete: Cascade)
+
+  status              TaskEventStatus @default(FAILED) // "DONE", "FAILED", "PENDING"
+  event_time          DateTime // Waktu REGISTER terjadi di sistem sumber
+  original_event_time DateTime? // Waktu asli dari sumber (jika terjadi clamping)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@unique([visit_event_id, task_id])
+  @@index([status])
+  @@index([event_time])
 }
 
 // Model Karantina jika data cacat atau perlu reprocess
@@ -65,7 +79,7 @@ model VisitEventQuarantine {
 model DoctorScheduleQuota {
   id BigInt @id @default(autoincrement())
 
-  dokter_id   String @db.VarChar(20)
+  dokter_id   Int
   poli_id     String @db.VarChar(20)
   nama_dokter String @db.VarChar(100)
   nama_poli   String @db.VarChar(100)
@@ -95,35 +109,22 @@ model VisitEventCursor {
   createdAt  DateTime        @default(now())
 }
 
-// Log Queue ketika pengiriman di proses
-model BpjsAntreanQueue {
-  id          BigInt    @id @default(autoincrement())
-  visit_id    String    @db.VarChar(50) // no rawat
-  task_id     Int
-  event_time  DateTime
-  payload     Json?
-  status      Status    @default(PENDING)
-  retry_count Int       @default(0)
+// Log proses pengiriman Antrean API BPJS
+model VisitEventLog {
+  id         BigInt   @id @default(autoincrement())
+  visit_id   String   @db.VarChar(50) // no rawat
+  task_id    String   @db.VarChar(10) // "1", "3", "4", "5"
+  event_time DateTime // Waktu REGISTER terjadi di sistem sumber 
+
+  payload   Json
+  http_code Int
+
+  retry_count Int     @default(0)
   last_error  String?
-  sentAt      DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime? @updatedAt
 
-  @@unique([visit_id, task_id])
-  @@index([status])
-}
-
-// Log Sukses ketika proses selesai dari queue
-model BpjsAntreanLogs {
-  id               BigInt    @id @default(autoincrement())
-  queue_id         BigInt
-  request_payload  Json
-  response_payload Json
-  http_code        Int
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime? @updatedAt
-
-  @@index([queue_id])
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
 }
 
 // Pengecualian POLI
@@ -138,6 +139,7 @@ model PoliException {
 }
 
 enum VisitEventType {
+  POLLER
   REGISTER
   CHECKIN
   START
@@ -162,4 +164,10 @@ enum Status {
   PENDING
   SEND
   FAILED
+}
+
+enum TaskEventStatus {
+  DONE
+  FAILED
+  SEND
 }

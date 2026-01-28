@@ -19,4 +19,4 @@ export type quotaAggregatorProps = {
   estimasidilayani: number;
 };
 
-export type cursorType = "REGISTER" | "CHECKIN" | "START" | "FINISH";
+export type cursorType = "POLLER" | "REGISTER" | "CHECKIN" | "START" | "FINISH";

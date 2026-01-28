@@ -1,6 +1,7 @@
 // Convert UTC ke GMT+7
 // Input: dateStr dalam format 'YYYY-MM-DD', timeStr dalam format 'HH:MM'
 // Output: YYYY-MM-DD HH:MM:SS di GMT+7
+
 export function formatDate(dateStr: string, timeStr: string): Date {
   const date = new Date(`${dateStr}T${timeStr}:00Z`); // Treat as UTC
   const gmtOffset = 7 * 60 * 60 * 1000; // 7 hours in milliseconds
@@ -39,4 +40,23 @@ export function normalizeRegistrationDate(
   const { tanggalOnly, tanggalDateTime } = toLocalDateParts(tglRegistrasi);
   const eventTime = new Date(`${tanggalOnly}T${jamRegistrasi}`);
   return { tanggalOnly, tanggalDateTime, eventTime };
+}
+
+/**
+ * Mengubah input tanggal (Date atau string) menjadi Date object dimana nilai UTC-nya
+ * sama persis dengan nilai "Face Value" dari input lokal.
+ * Berguna untuk mengatasi pergeseran timezone saat menyimpan ke database yang menggunakan UTC.
+ */
+export function toFaceValueUTC(dateInput: Date | string): Date {
+  if (typeof dateInput === "string") {
+    const dateString = dateInput.replace(" ", "T");
+    return new Date(dateString.endsWith("Z") ? dateString : dateString + "Z");
+  }
+
+  const date = new Date(dateInput);
+  const offset = date.getTimezoneOffset() * 60000;
+  if (offset !== 0) {
+    return new Date(date.getTime() - offset);
+  }
+  return date;
 }

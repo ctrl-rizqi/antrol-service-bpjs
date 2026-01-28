@@ -1,13 +1,16 @@
 import prisma from "../lib/prisma";
+import { $Enums } from "@prisma/client";
 import { cursorType } from "../types/registration";
 
 export async function dateCursor({
   eventType,
 }: {
-  eventType: cursorType;
+  eventType: $Enums.VisitEventType;
 }): Promise<{
   date: Date;
 }> {
+  // enum dari prisma
+
   // set tanggal
   const dateEnv =
     process.env.CURSOR_REGISTER || new Date().toISOString().split("T")[0];

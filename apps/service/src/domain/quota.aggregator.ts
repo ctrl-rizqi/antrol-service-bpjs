@@ -1,20 +1,7 @@
 import prisma from "../lib/prisma";
 import { getJadwalDokter } from "../bpjs/bpjs.client";
 import { JadwalDokterResponse } from "../types/bpjs";
-
-export type AggregatedJadwal = {
-  kodedokter: string;
-  namadokter: string;
-  kodepoli: string;
-  namapoli: string;
-  nomorantrean: number;
-  jampraktek: string;
-  kuotajkn: number;
-  sisakuotajkn: number;
-  kuotanonjkn: number;
-  sisakuotanonjkn: number;
-  estimasidilayani: number;
-};
+import { AggregatedJadwal } from "../validator/aggregated-validator";
 
 async function getOrFetchSchedule(
   kd_dokter: number,
@@ -24,7 +11,7 @@ async function getOrFetchSchedule(
   // Cek apakah jadwal sudah ada di snapshot
   const existing = await prisma.doctorScheduleQuota.findFirst({
     where: {
-      dokter_id: kd_dokter.toString(),
+      dokter_id: kd_dokter,
       poli_id: kd_poli,
       tanggal: new Date(tanggal),
     },
@@ -58,7 +45,7 @@ async function getOrFetchSchedule(
 
   return prisma.doctorScheduleQuota.create({
     data: {
-      dokter_id: kd_dokter.toString(),
+      dokter_id: kd_dokter,
       nama_dokter: jadwal.namadokter,
       poli_id: kd_poli,
       nama_poli: jadwal.namapoli,
@@ -78,7 +65,11 @@ export async function aggregatorJadwal(
   tanggal: string,
   jam: string,
 ): Promise<AggregatedJadwal> {
-  const schedule = await getOrFetchSchedule(kd_dokter, kd_poli, tanggal);
+  const schedule = await getOrFetchSchedule(
+    parseInt(kd_dokter.toString()),
+    kd_poli,
+    tanggal,
+  );
 
   const { estimasiDilayani, sisaKuota, totalRegistrasi } =
     await calculateSisaKuota(
@@ -91,11 +82,11 @@ export async function aggregatorJadwal(
 
   return {
     nomorantrean: totalRegistrasi + 1,
-    kodedokter: schedule.dokter_id,
+    kodedokter: Number(schedule.dokter_id),
     namadokter: schedule.nama_dokter,
     kodepoli: schedule.poli_id,
     namapoli: schedule.nama_poli,
-    jampraktek: jam,
+    jampraktek: schedule.jam_mulai + "-" + schedule.jam_selesai,
     kuotajkn: schedule.kuota_jkn,
     sisakuotajkn: sisaKuota,
     kuotanonjkn: schedule.kuota_jkn,
@@ -118,7 +109,7 @@ export async function calculateSisaKuota(
   // Kalkulasi sisa kuota: kuota_jkn - total registrasi di tanggal yang sama
   const totalRegistrasi = await prisma.visitEvent.count({
     where: {
-      dokter_id: kd_dokter.toString(),
+      dokter_id: parseInt(kd_dokter.toString()),
       poli_id: kd_poli,
       tanggal: new Date(tanggal),
     },
