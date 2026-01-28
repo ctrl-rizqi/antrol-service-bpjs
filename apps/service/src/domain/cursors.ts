@@ -1,6 +1,5 @@
 import prisma from "../lib/prisma";
 import { $Enums } from "@prisma/client";
-import { cursorType } from "../types/registration";
 
 export async function dateCursor({
   eventType,
@@ -47,7 +46,7 @@ export async function updateDateCursor({
   eventType,
   newDate,
 }: {
-  eventType: cursorType;
+  eventType: $Enums.VisitEventType;
   newDate: Date;
 }) {
   try {

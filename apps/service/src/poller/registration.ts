@@ -131,7 +131,7 @@ async function createRegistration(
 /**
  * Process single registration row
  */
-async function processRegistrationRow(
+export async function processRegistrationRow(
   row: RegistrationRow,
   taskProgress: TaskProgressProps,
 ) {
@@ -195,7 +195,7 @@ async function processRegistrationRow(
 }
 
 // check task_id_x jika sudah ada
-async function checkTaskId(row: RegistrationRow): Promise<TaskProgressProps> {
+export async function checkTaskId(row: RegistrationRow): Promise<TaskProgressProps> {
   const tasks: TaskProgressProps["task"] = [];
   let lastValidTime: Date | null = null;
 

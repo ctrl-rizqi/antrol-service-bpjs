@@ -4,9 +4,17 @@ import cors from "cors";
 import prisma from "./lib/prisma";
 import { khanzaDb } from "./khanza/khanza.client";
 
+// controller
+import adminRouter from "./api/admin";
+
 // Scheduler JOB
 import { startPollerScheduler } from "./job/poller.scheduler";
 import { startQueuePoller } from "./job/queue.sheduler";
+
+// Tambahkan ini untuk mengatasi masalah serialisasi BigInt
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
 
 // Check Database Connection
 async function checkDatabaseConnection() {
@@ -48,6 +56,8 @@ async function checkDatabaseSIMRS() {
   app.get("/", (req: Request, res: Response) => {
     res.send("Hello, World!");
   });
+
+  app.use("/api/admin", adminRouter);
 
   process.on("uncaughtException", async (err) => {
     await prisma.$disconnect();
