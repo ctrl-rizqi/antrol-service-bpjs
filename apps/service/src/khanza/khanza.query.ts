@@ -65,7 +65,7 @@ export async function fetchRegistrations(
 }
 
 export async function fetchRegistrationByNoReg(
-  noReg: string,
+  noRawat: string,
 ): Promise<khanzaRegistration | null> {
   const [rows] = await khanzaDb.query(
     `
@@ -112,9 +112,9 @@ export async function fetchRegistrationByNoReg(
         WHEN 6 THEN 'JUMAT'
         WHEN 7 THEN 'SABTU'
       END = j.hari_kerja
-    WHERE rp.no_reg = ?
+    WHERE rp.no_rawat = ?
     `,
-    [noReg],
+    [noRawat],
   );
 
   const registrationRows = rows as Array<khanzaRegistration>;
