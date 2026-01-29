@@ -23,23 +23,30 @@ const TASK_DEPENDENCY: Record<number, number> = {
   7: 6,
 };
 
-export async function processRegistrationTask(task: any) {
+export async function processRegistrationTask(
+  task: any,
+  force: boolean = false,
+) {
   // 1. Cek Retry Count: Hitung berapa kali task ini sudah gagal sebelumnya
-  const retryCount = await prisma.visitEventLog.count({
-    where: {
-      visit_id: task.VisitEvent.visit_id,
-      task_id: task.task_id.toString(),
-      http_code: { not: 200 }, // Hitung yang gagal saja
-    },
-  });
-
-  if (retryCount >= MAX_RETRY) {
-    console.log(`[GIVE UP] Task ${task.id} exceeded max retry (${MAX_RETRY})`);
-    await prisma.eventTask.update({
-      where: { id: task.id },
-      data: { status: "FAILED" },
+  if (!force) {
+    const retryCount = await prisma.visitEventLog.count({
+      where: {
+        visit_id: task.VisitEvent.visit_id,
+        task_id: task.task_id.toString(),
+        http_code: { not: 200 }, // Hitung yang gagal saja
+      },
     });
-    return; // Skip proses selanjutnya
+
+    if (retryCount >= MAX_RETRY) {
+      console.log(
+        `[GIVE UP] Task ${task.id} exceeded max retry (${MAX_RETRY})`,
+      );
+      await prisma.eventTask.update({
+        where: { id: task.id },
+        data: { status: "FAILED" },
+      });
+      return; // Skip proses selanjutnya
+    }
   }
 
   const parsedPayload = JSON.parse(task.VisitEvent.payload?.toString() || "{}");
@@ -127,7 +134,7 @@ export async function processRegistrationTask(task: any) {
   }
 }
 
-export async function processUpdateTask(task: any) {
+export async function processUpdateTask(task: any, force: boolean = false) {
   // 1. Cek Dependency
   const requiredPrevId = TASK_DEPENDENCY[task.task_id];
   const prevTask = task.VisitEvent.EventTasks.find(
@@ -147,20 +154,22 @@ export async function processUpdateTask(task: any) {
   }
 
   // 2. Cek Retry Count
-  const retryCount = await prisma.visitEventLog.count({
-    where: {
-      visit_id: task.VisitEvent.visit_id,
-      task_id: task.task_id.toString(),
-      http_code: { not: 200 },
-    },
-  });
-
-  if (retryCount >= MAX_RETRY) {
-    await prisma.eventTask.update({
-      where: { id: task.id },
-      data: { status: "FAILED" },
+  if (!force) {
+    const retryCount = await prisma.visitEventLog.count({
+      where: {
+        visit_id: task.VisitEvent.visit_id,
+        task_id: task.task_id.toString(),
+        http_code: { not: 200 },
+      },
     });
-    return;
+
+    if (retryCount >= MAX_RETRY) {
+      await prisma.eventTask.update({
+        where: { id: task.id },
+        data: { status: "FAILED" },
+      });
+      return;
+    }
   }
 
   // 3. Kirim ke BPJS (Update Waktu)
@@ -247,12 +256,22 @@ export async function pollQueueRegistration() {
       if (tasks.length > 0) {
         // Kirim ke BPJS
         // Gunakan Promise.all untuk mengirim secara paralel (meningkatkan performa)
-        await Promise.all(tasks.map(processRegistrationTask));
+        await Promise.all(tasks.map((t) => processRegistrationTask(t)));
 
         // Beri jeda antar batch agar tidak membebani server/API BPJS (Rate Limiting sederhana)
         // Ini juga berfungsi sebagai delay untuk retry jika ada task yang gagal dan diambil lagi di batch berikutnya
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
       } else {
+        // Sync local cursor with DB in case it was reset via API
+        const currentDbCursor = await dateCursor({ eventType: "REGISTER" });
+        if (currentDbCursor.date.getTime() !== cursorDate.date.getTime()) {
+          console.log(
+            `[POLL] Cursor change detected. Switching from ${cursorDate.date.toISOString()} to ${currentDbCursor.date.toISOString()}`,
+          );
+          cursorDate = currentDbCursor;
+          continue;
+        }
+
         // Jika tidak ada data (tasks kosong), cek apakah cursor perlu dimajukan
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -323,10 +342,20 @@ export async function pollQueueTask() {
       });
 
       if (tasks.length > 0) {
-        await Promise.all(tasks.map(processUpdateTask));
+        await Promise.all(tasks.map((t) => processUpdateTask(t)));
 
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
       } else {
+        // Sync local cursor with DB in case it was reset via API
+        const currentDbCursor = await dateCursor({ eventType: "CHECKIN" });
+        if (currentDbCursor.date.getTime() !== cursorDate.date.getTime()) {
+          console.log(
+            `[POLL] Cursor change detected. Switching from ${cursorDate.date.toISOString()} to ${currentDbCursor.date.toISOString()}`,
+          );
+          cursorDate = currentDbCursor;
+          continue;
+        }
+
         // Cursor logic
         const today = new Date();
         today.setHours(0, 0, 0, 0);

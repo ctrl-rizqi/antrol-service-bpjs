@@ -118,8 +118,10 @@ export async function calculateSisaKuota(
   const sisaKuota = Math.max(0, kuotajkn - totalRegistrasi);
 
   // Estimasi dilayani: jam kedatangan + (total registrasi * 6 menit)
+  // Fix: Gunakan format ISO dengan timezone +07:00 agar waktu yang dihasilkan sesuai dengan WIB
   const estimasiDilayani = new Date(
-    new Date(tanggal + " " + jam).getTime() + totalRegistrasi * 6 * 60000,
+    new Date(`${tanggal}T${jam.trim()}+07:00`).getTime() +
+      totalRegistrasi * 6 * 60000,
   );
 
   return {

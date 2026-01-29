@@ -1,5 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
-import logo from '../logo.svg'
+import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({
   component: App,
@@ -7,33 +6,21 @@ export const Route = createFileRoute('/')({
 
 function App() {
   return (
-    <div className="text-center">
-      <header className="min-h-screen flex flex-col items-center justify-center bg-[#282c34] text-white text-[calc(10px+2vmin)]">
-        <img
-          src={logo}
-          className="h-[40vmin] pointer-events-none animate-[spin_20s_linear_infinite]"
-          alt="logo"
-        />
-        <p>
-          Edit <code>src/routes/index.tsx</code> and save to reload.
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold tracking-tight">
+          Selamat Datang di Antrol Service
+        </h1>
+        <p className="text-lg text-muted-foreground">
+          Ini adalah halaman Landing Page (Tanpa Sidebar).
         </p>
-        <a
-          className="text-[#61dafb] hover:underline"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          to="/dashboard"
+          className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
-          Learn React
-        </a>
-        <a
-          className="text-[#61dafb] hover:underline"
-          href="https://tanstack.com"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn TanStack
-        </a>
-      </header>
+          Masuk ke Dashboard
+        </Link>
+      </div>
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { paginate } from "../utils/pagination";
 import { fetchRegistrationByNoReg } from "../khanza/khanza.query";
 import { checkTaskId, processRegistrationRow } from "../poller/registration";
 import { processRegistrationTask, processUpdateTask } from "../poller/queue";
+import { updateDateCursor } from "../domain/cursors";
 
 const router: Router = Router();
 
@@ -176,9 +177,9 @@ router.post("/visit-event/resend", async (req: Request, res: Response) => {
       };
 
       if (currentTask.task_id === 0) {
-        await processRegistrationTask(taskWithContext);
+        await processRegistrationTask(taskWithContext, true);
       } else if ([3, 4, 5, 6, 7].includes(currentTask.task_id)) {
-        await processUpdateTask(taskWithContext);
+        await processUpdateTask(taskWithContext, true);
       }
     }
 
@@ -198,6 +199,59 @@ router.post("/visit-event/resend", async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: `Failed to resend visit_id ${noRawat}`,
+      error: (error as Error).message,
+    });
+  }
+});
+
+// Reset cursor poller ke tanggal tertentu
+// Input : {
+//     "eventType": "REGISTER",
+//     "date": "2023-10-25"
+// }
+
+router.post("/cursor/reset", async (req: Request, res: Response) => {
+  const { eventType, date } = req.body;
+
+  if (!eventType || !["REGISTER", "CHECKIN"].includes(eventType)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid eventType. Must be 'REGISTER' or 'CHECKIN'.",
+    });
+  }
+
+  const newDate = new Date(date);
+  if (isNaN(newDate.getTime())) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid date format. Use YYYY-MM-DD.",
+    });
+  }
+
+  try {
+    // Set time to start of day
+    newDate.setHours(0, 0, 0, 0);
+
+    await updateDateCursor({
+      eventType,
+      newDate,
+    });
+
+    console.log(
+      `[ADMIN] Cursor for ${eventType} reset to ${newDate.toISOString()}`,
+    );
+
+    res.json({
+      success: true,
+      message: `Cursor for ${eventType} successfully reset to ${
+        newDate.toISOString().split("T")[0]
+      }. Poller will pick this up shortly.`,
+    });
+  } catch (error) {
+    console.error(`Failed to reset cursor for ${eventType}:`, error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to reset cursor",
       error: (error as Error).message,
     });
   }
