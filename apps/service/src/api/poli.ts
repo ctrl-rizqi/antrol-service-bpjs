@@ -3,6 +3,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { paginate } from "../utils/pagination";
+import { getAllPoliInfo } from "../bpjs/bpjs.client";
 
 const router: Router = Router();
 
@@ -23,9 +24,6 @@ router.post("/exception", async (req: Request, res: Response) => {
 
   try {
     await prisma.$transaction(async (tx) => {
-      // Reset data pengecualian lama
-      await tx.poliException.deleteMany({});
-
       // Masukkan data baru
       if (poli_id.length > 0) {
         await tx.poliException.createMany({
@@ -33,6 +31,7 @@ router.post("/exception", async (req: Request, res: Response) => {
             poli_id: id.poli_id,
             nama_poli: id.poli_nama,
           })),
+          skipDuplicates: true,
         });
       }
     });
@@ -74,6 +73,51 @@ router.get("/exception", async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch exception poli_id",
+      error: (error as Error).message,
+    });
+  }
+});
+
+// daftar poli dari fetch BPJS
+router.get("/list", async (req: Request, res: Response) => {
+  try {
+    const response = await getAllPoliInfo();
+    res.json({
+      success: true,
+      data: response,
+    });
+  } catch (error) {
+    console.error("Failed to fetch poli list:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch poli list",
+      error: (error as Error).message,
+    });
+  }
+});
+
+// hapus poli
+router.delete("/delete/:poli_id", async (req: Request, res: Response) => {
+  const { poli_id } = req.params as { poli_id: string };
+
+  try {
+    await prisma.poliException.delete({
+      where: {
+        poli_id: poli_id,
+      },
+    });
+
+    console.log(`[ADMIN] Deleted exception poli_id: ${poli_id}`);
+
+    res.json({
+      success: true,
+      message: `Successfully deleted exception poli_id: ${poli_id}`,
+    });
+  } catch (error) {
+    console.error(`Failed to delete exception poli_id: ${poli_id}:`, error);
+    return res.status(500).json({
+      success: false,
+      message: `Failed to delete exception poli_id: ${poli_id}`,
       error: (error as Error).message,
     });
   }

@@ -5,3 +5,10 @@ export type PoliException = {
   createdAt: string
   updatedAt: string | null
 }
+
+export type Poli = {
+  kodesubspesialis: string
+  namasubspesialis: string
+  kodepoli: string
+  namapoli: string
+}
