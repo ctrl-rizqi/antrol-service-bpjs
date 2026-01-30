@@ -1,5 +1,5 @@
-
 import { Request } from "express";
+import prisma, { Prisma } from "../lib/prisma";
 
 interface PaginationResult<T> {
   data: T[];
@@ -13,10 +13,22 @@ interface PaginationResult<T> {
   };
 }
 
-export async function paginate<T>(
-  model: any,
+// Type untuk Prisma Delegate
+type PrismaDelegate<T, TArgs> = {
+  findMany(args?: TArgs): Promise<T[]>;
+  count(args?: {
+    where?: TArgs extends { where: infer W } ? W : never;
+  }): Promise<number>;
+};
+
+export async function paginate<
+  T,
+  TDelegate extends PrismaDelegate<T, any>,
+  TArgs extends Parameters<TDelegate["findMany"]>[0],
+>(
+  model: TDelegate,
   req: Request,
-  findManyArgs: any = {}
+  findManyArgs?: TArgs,
 ): Promise<PaginationResult<T>> {
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 10;
@@ -27,8 +39,10 @@ export async function paginate<T>(
       ...findManyArgs,
       take: limit,
       skip: skip,
+    } as TArgs),
+    model.count({
+      where: findManyArgs?.where,
     }),
-    model.count({ where: findManyArgs.where }),
   ]);
 
   const totalPages = Math.ceil(total / limit);

@@ -1,23 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router'
 import Header from '@/components/Header'
 import { DataTable } from '@/components/data-table'
-import { columns, type Payment } from '@/components/dashboard/columns'
+import {
+  columns,
+  type VisitEventWithTasks,
+} from '@/components/visit-event/columns'
 import { Input } from '@/components/ui/input'
+import { useVisitEvent } from '@/hooks/visit-event'
 
 export const Route = createFileRoute('/dashboard/visit-event/')({
   component: RouteComponent,
 })
 
-const data: Payment[] = [
-  {
-    id: '728ed52f',
-    amount: 100,
-    status: 'pending',
-    email: 'm@example.com',
-  },
-]
-
 function RouteComponent() {
+  const { data } = useVisitEvent()
+
   return (
     <>
       <Header
@@ -32,7 +29,10 @@ function RouteComponent() {
         <div className="flex items-center">
           <Input placeholder="Cari kodebooking" className="max-w-xs" />
         </div>
-        <DataTable columns={columns} data={data} />
+        <DataTable
+          columns={columns}
+          data={(data?.data || []) as VisitEventWithTasks[]}
+        />
       </div>
     </>
   )

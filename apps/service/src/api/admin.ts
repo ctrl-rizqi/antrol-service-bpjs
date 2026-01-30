@@ -17,6 +17,9 @@ router.get("/visit-event", async (req: Request, res: Response) => {
       include: {
         EventTasks: true,
       },
+      orderBy: {
+        tanggal: "desc",
+      },
     });
 
     res.json({
@@ -209,7 +212,6 @@ router.post("/visit-event/resend", async (req: Request, res: Response) => {
 //     "eventType": "REGISTER",
 //     "date": "2023-10-25"
 // }
-
 router.post("/cursor/reset", async (req: Request, res: Response) => {
   const { eventType, date } = req.body;
 
