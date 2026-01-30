@@ -69,6 +69,11 @@ const data = {
       url: '/dashboard/visit-event',
       icon: PieChart,
     },
+    {
+      name: 'Daftar Pengecualian Poli',
+      url: '/dashboard/poli-exception/',
+      icon: PieChart,
+    },
   ],
 }
 

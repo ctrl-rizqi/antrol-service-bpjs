@@ -6,6 +6,7 @@ import { khanzaDb } from "./khanza/khanza.client";
 
 // controller
 import adminRouter from "./api/admin";
+import poliRouter from "./api/poli";
 
 // Scheduler JOB
 import { startPollerScheduler } from "./job/poller.scheduler";
@@ -59,6 +60,7 @@ async function checkDatabaseSIMRS() {
   });
 
   app.use("/api/admin", adminRouter);
+  app.use("/api/poli", poliRouter);
 
   process.on("uncaughtException", async (err) => {
     await prisma.$disconnect();

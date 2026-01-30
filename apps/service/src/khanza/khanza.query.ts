@@ -51,14 +51,15 @@ export async function fetchRegistrations(
         WHEN 7 THEN 'SABTU'
       END = j.hari_kerja
     WHERE rp.kd_pj = 'BPJ'
-    AND (rp.tgl_registrasi > ? OR (rp.tgl_registrasi = ? AND rp.jam_reg > ?))
+    AND rp.tgl_registrasi = ?
+    AND rp.jam_reg >= ?
     AND rp.jenis_kunjungan IS NOT NULL
     ORDER BY
       rp.tgl_registrasi,
       rp.jam_reg
     LIMIT 50
     `,
-    [lastDate, lastDate, lastTime],
+    [lastDate, lastTime],
   );
 
   return rows as Array<khanzaRegistration>;

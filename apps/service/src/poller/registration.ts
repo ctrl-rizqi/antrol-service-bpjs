@@ -195,7 +195,9 @@ export async function processRegistrationRow(
 }
 
 // check task_id_x jika sudah ada
-export async function checkTaskId(row: RegistrationRow): Promise<TaskProgressProps> {
+export async function checkTaskId(
+  row: RegistrationRow,
+): Promise<TaskProgressProps> {
   const tasks: TaskProgressProps["task"] = [];
   let lastValidTime: Date | null = null;
 
@@ -321,6 +323,18 @@ export async function pollRegisterEvent() {
           console.log(
             `[POLL] Skipping registration for poli exception: ${row.no_rawat}`,
           );
+          processedCount++;
+          continue;
+        }
+
+        // FIX: Filter data yang tidak sesuai dengan tanggal cursor
+        // fetchRegistrations mungkin mengembalikan data > tanggal cursor
+        const { tanggalOnly } = normalizeRegistrationDate(
+          row.tgl_registrasi,
+          row.jam_registrasi,
+        );
+
+        if (tanggalOnly !== dateString) {
           processedCount++;
           continue;
         }

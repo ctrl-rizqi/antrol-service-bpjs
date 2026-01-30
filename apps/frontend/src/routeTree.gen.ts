@@ -15,6 +15,7 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DemoTableRouteImport } from './routes/demo/table'
 import { Route as DashboardVisitEventIndexRouteImport } from './routes/dashboard/visit-event/index'
+import { Route as DashboardPoliExceptionIndexRouteImport } from './routes/dashboard/poli-exception/index'
 import { Route as DemoFormSimpleRouteImport } from './routes/demo/form.simple'
 import { Route as DemoFormAddressRouteImport } from './routes/demo/form.address'
 
@@ -49,6 +50,12 @@ const DashboardVisitEventIndexRoute =
     path: '/visit-event/',
     getParentRoute: () => DashboardRouteRoute,
   } as any)
+const DashboardPoliExceptionIndexRoute =
+  DashboardPoliExceptionIndexRouteImport.update({
+    id: '/poli-exception/',
+    path: '/poli-exception/',
+    getParentRoute: () => DashboardRouteRoute,
+  } as any)
 const DemoFormSimpleRoute = DemoFormSimpleRouteImport.update({
   id: '/demo/form/simple',
   path: '/demo/form/simple',
@@ -68,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
+  '/dashboard/poli-exception/': typeof DashboardPoliExceptionIndexRoute
   '/dashboard/visit-event/': typeof DashboardVisitEventIndexRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +85,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
+  '/dashboard/poli-exception': typeof DashboardPoliExceptionIndexRoute
   '/dashboard/visit-event': typeof DashboardVisitEventIndexRoute
 }
 export interface FileRoutesById {
@@ -88,6 +97,7 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
+  '/dashboard/poli-exception/': typeof DashboardPoliExceptionIndexRoute
   '/dashboard/visit-event/': typeof DashboardVisitEventIndexRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/demo/form/address'
     | '/demo/form/simple'
+    | '/dashboard/poli-exception/'
     | '/dashboard/visit-event/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/demo/form/address'
     | '/demo/form/simple'
+    | '/dashboard/poli-exception'
     | '/dashboard/visit-event'
   id:
     | '__root__'
@@ -119,6 +131,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/demo/form/address'
     | '/demo/form/simple'
+    | '/dashboard/poli-exception/'
     | '/dashboard/visit-event/'
   fileRoutesById: FileRoutesById
 }
@@ -175,6 +188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardVisitEventIndexRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/dashboard/poli-exception/': {
+      id: '/dashboard/poli-exception/'
+      path: '/poli-exception'
+      fullPath: '/dashboard/poli-exception/'
+      preLoaderRoute: typeof DashboardPoliExceptionIndexRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
     '/demo/form/simple': {
       id: '/demo/form/simple'
       path: '/demo/form/simple'
@@ -194,11 +214,13 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteRouteChildren {
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardPoliExceptionIndexRoute: typeof DashboardPoliExceptionIndexRoute
   DashboardVisitEventIndexRoute: typeof DashboardVisitEventIndexRoute
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardPoliExceptionIndexRoute: DashboardPoliExceptionIndexRoute,
   DashboardVisitEventIndexRoute: DashboardVisitEventIndexRoute,
 }
 
