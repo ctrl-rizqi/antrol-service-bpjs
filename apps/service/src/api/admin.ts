@@ -1,7 +1,7 @@
 // Admin controller berisikan logika untuk mengelola data admin
 import { Router } from "express";
 import type { Request, Response } from "express";
-import prisma from "../lib/prisma";
+import prisma, { Prisma } from "../lib/prisma";
 import { paginate } from "../utils/pagination";
 import { fetchRegistrationByNoReg } from "../khanza/khanza.query";
 import { checkTaskId, processRegistrationRow } from "../poller/registration";
@@ -12,8 +12,35 @@ const router: Router = Router();
 
 // Mengambil semua VisitEvent dan beserta statusnya
 router.get("/visit-event", async (req: Request, res: Response) => {
+  const search = req.query.search as string;
+  const startDate = req.query.startDate as string;
+  const endDate = req.query.endDate as string;
+
+  const where: Prisma.VisitEventWhereInput = {};
+
+  if (search) {
+    where.OR = [
+      { visit_id: { contains: search } },
+      { no_rkm_medis: { contains: search } },
+      { nomor_antrean: { contains: search } },
+    ];
+  }
+
+  if (startDate || endDate) {
+    where.tanggal = {};
+    if (startDate) {
+      where.tanggal.gte = new Date(startDate);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      if (endDate.length === 10) end.setUTCHours(23, 59, 59, 999);
+      where.tanggal.lte = end;
+    }
+  }
+
   try {
     const paginatedVisitEvents = await paginate(prisma.visitEvent, req, {
+      where,
       include: {
         EventTasks: true,
       },

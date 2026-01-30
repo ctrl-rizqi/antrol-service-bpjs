@@ -1,8 +1,73 @@
 import { Badge } from '../ui/badge'
 import type { EventTask, VisitEvent } from '@/interface/visit-event'
 import { type ColumnDef } from '@tanstack/react-table'
+import { Button } from '@/components/ui/button'
+import { ButtonGroup } from '@/components/ui/button-group'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  MoreHorizontalIcon,
+  RefreshCcwIcon,
+  SendHorizonalIcon,
+} from 'lucide-react'
+import { useValidateVisitEvent, useResendVisitEvent } from '@/hooks/visit-event'
 
 export type VisitEventWithTasks = VisitEvent & { EventTasks: EventTask[] }
+
+const Refresh = ({ visit_id }: { visit_id: string }) => {
+  const { mutateAsync } = useValidateVisitEvent()
+
+  const handleRefresh = async () => {
+    try {
+      await mutateAsync(visit_id)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="justify-start p-0!"
+        onClick={handleRefresh}
+      >
+        <RefreshCcwIcon className="h-4 w-4" />
+        <span>Validasi Ulang</span>
+      </Button>
+    </>
+  )
+}
+
+const Resend = ({ visit_id }: { visit_id: string }) => {
+  const { mutateAsync } = useResendVisitEvent()
+
+  const handleResend = async () => {
+    try {
+      await mutateAsync(visit_id)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="justify-start p-0!"
+        onClick={handleResend}
+      >
+        <SendHorizonalIcon className="h-4 w-4" />
+        <span>Resend</span>
+      </Button>
+    </>
+  )
+}
 
 const statusColors = (item: EventTask) => {
   switch (item.status) {
@@ -41,6 +106,10 @@ export const columns: ColumnDef<VisitEventWithTasks, unknown>[] = [
         </div>
       )
     },
+  },
+  {
+    accessorKey: 'jam_registrasi',
+    header: 'Jam Registrasi',
   },
   {
     accessorKey: 'tanggal',
@@ -83,6 +152,35 @@ export const columns: ColumnDef<VisitEventWithTasks, unknown>[] = [
               ? `${payload.namadokter.slice(0, 20)}...`
               : payload.namadokter}
           </p>
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: 'id',
+    header: 'Action',
+    cell: ({ row }) => {
+      return (
+        <div className="flex items-center gap-2">
+          <ButtonGroup>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <MoreHorizontalIcon />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuGroup>
+                  <DropdownMenuItem>
+                    <Refresh visit_id={row.original.visit_id} />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Resend visit_id={row.original.visit_id} />
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </ButtonGroup>
         </div>
       )
     },
