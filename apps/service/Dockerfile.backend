@@ -21,6 +21,7 @@ RUN cd apps/service && pnpm prisma generate
 RUN pnpm run --filter service build
 
 # Prepare production dependencies (isolates workspace packages & removes symlinks)
+RUN rm -rf pruned
 RUN pnpm --filter service --prod deploy pruned
 
 # Production stage
