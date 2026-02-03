@@ -38,6 +38,7 @@ COPY --from=builder /app/apps/service/dist ./dist
 COPY --from=builder /app/apps/service/prisma ./prisma
 
 # Generate Prisma Client in production to ensure binary compatibility
+RUN pnpm add prisma@7.3.0
 RUN pnpm exec prisma generate
 
 EXPOSE 3000
