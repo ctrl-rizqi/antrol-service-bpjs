@@ -22,7 +22,7 @@ RUN pnpm run --filter service build
 
 # Prepare production dependencies (isolates workspace packages & removes symlinks)
 RUN rm -rf pruned
-RUN pnpm --filter service --prod deploy pruned
+RUN pnpm --filter service --prod deploy --legacy pruned
 
 # Production stage
 FROM node:22-alpine AS production
@@ -31,7 +31,6 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm
 
-# Copy pruned dependencies (includes package.json and flattened node_modules)
 COPY --from=builder /app/pruned ./
 
 # Copy built application & prisma schema
@@ -39,7 +38,7 @@ COPY --from=builder /app/apps/service/dist ./dist
 COPY --from=builder /app/apps/service/prisma ./prisma
 
 # Generate Prisma Client in production to ensure binary compatibility
-RUN pnpm prisma generate
+RUN pnpm exec prisma generate
 
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
