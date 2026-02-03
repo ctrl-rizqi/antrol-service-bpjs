@@ -15,7 +15,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+const fuzzyFilter: FilterFn<any> = (row, columnId, value) => {
   return String(row.getValue(columnId))
     .toLowerCase()
     .includes(value.toLowerCase())
