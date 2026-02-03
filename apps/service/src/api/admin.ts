@@ -7,6 +7,11 @@ import { fetchRegistrationByNoReg } from "../khanza/khanza.query";
 import { checkTaskId, processRegistrationRow } from "../poller/registration";
 import { processRegistrationTask, processUpdateTask } from "../poller/queue";
 import { updateDateCursor } from "../domain/cursors";
+import { getListTaskByKodebooking, sendToBpjs } from "../bpjs/bpjs.client";
+import { listTasksArraySchema } from "../validator/listtask-validator";
+import z from "zod";
+import { noContentResponseSchema } from "../utils/NoContentResponse";
+import { parseWibDateString, toFaceValueUTC } from "../utils/formatDate";
 
 const router: Router = Router();
 
@@ -132,7 +137,7 @@ router.get("/visit-event/:id/tasks", async (req: Request, res: Response) => {
   try {
     const visitEvent = await prisma.visitEvent.findUnique({
       where: { id: Number(id) },
-      include: { EventTasks: true },
+      include: { EventTasks: { orderBy: { task_id: "asc" } } },
     });
 
     if (!visitEvent) {
@@ -142,9 +147,28 @@ router.get("/visit-event/:id/tasks", async (req: Request, res: Response) => {
       });
     }
 
+    // Fetch related logs in a separate query
+    const visitLogs = await prisma.visitEventLog.findMany({
+      where: { visit_id: visitEvent.visit_id },
+      orderBy: { createdAt: "asc" },
+    });
+
+    // Manually attach logs to each task
+    // Note: EventTask.task_id is Int, VisitEventLog.task_id is String
+    const tasksWithLogs = visitEvent.EventTasks.map((task) => {
+      const logs = visitLogs.filter(
+        (log) => log.task_id === String(task.task_id),
+      );
+      // Create a new object to avoid modifying the original task object from prisma result
+      return { ...task, logs };
+    });
+
+    // Replace the original tasks with the augmented ones
+    const responseData = { ...visitEvent, EventTasks: tasksWithLogs };
+
     res.json({
       success: true,
-      data: visitEvent,
+      data: responseData,
     });
   } catch (error) {
     console.error(`Failed to fetch tasks for visit_id ${id}:`, error);
@@ -281,6 +305,123 @@ router.post("/cursor/reset", async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to reset cursor",
+      error: (error as Error).message,
+    });
+  }
+});
+
+// Mengambil getlisttask dari API
+router.post("/visit-event/sync", async (req: Request, res: Response) => {
+  const { kodebooking } = req.body || {};
+
+  if (typeof kodebooking !== "string") {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid registration number format.",
+    });
+  }
+
+  try {
+    const response = await getListTaskByKodebooking(kodebooking);
+    // jika ada maka akan memberikan array jika tidak akan memberikan object
+    // { metadata: { code: 204, message: 'No Content } }
+    // console.log(response);
+    const noContentCheck = noContentResponseSchema.safeParse(response);
+
+    if (noContentCheck.success) {
+      return res.json({
+        success: true,
+        message: "No visit events found.",
+        data: [],
+      });
+    }
+
+    // Output:
+    // [
+    //   {
+    //     wakturs: "30-01-2026 15:30:00 WIB",
+    //     waktu: "30-01-2026 15:33:12 WIB",
+    //     taskname: "akhir waktu layan admisi/mulai waktu tunggu poli",
+    //     taskid: 3,
+    //     kodebooking: "2026/01/30/005696",
+    //   },
+    //   {
+    //     wakturs: "30-01-2026 15:46:57 WIB",
+    //     waktu: "30-01-2026 15:47:59 WIB",
+    //     taskname: "akhir waktu tunggu poli/mulai waktu layan poli",
+    //     taskid: 4,
+    //     kodebooking: "2026/01/30/005696",
+    //   },
+    //   {
+    //     wakturs: "30-01-2026 16:02:41 WIB",
+    //     waktu: "30-01-2026 16:03:24 WIB",
+    //     taskname: "akhir waktu layan poli",
+    //     taskid: 5,
+    //     kodebooking: "2026/01/30/005696",
+    //   },
+    //   {
+    //     wakturs: "30-01-2026 16:05:39 WIB",
+    //     waktu: "30-01-2026 16:07:53 WIB",
+    //     taskname: "mulai waktu layan farmasi",
+    //     taskid: 6,
+    //     kodebooking: "2026/01/30/005696",
+    //   },
+    //   {
+    //     wakturs: "30-01-2026 16:39:58 WIB",
+    //     waktu: "30-01-2026 16:42:54 WIB",
+    //     taskname: "akhir waktu layan farmasi",
+    //     taskid: 7,
+    //     kodebooking: "2026/01/30/005696",
+    //   },
+    // ];
+    const validated = listTasksArraySchema.parse(response);
+
+    // waktu sync
+    const syncTime = toFaceValueUTC(new Date());
+    // Menyimpan ke database
+    // transaksi, menyimpan task id berdasarkan kodebooking
+    await prisma.$transaction(async (tx) => {
+      const visitEvent = await tx.visitEvent.update({
+        where: { visit_id: kodebooking },
+        data: {
+          syncedAt: syncTime,
+        },
+      });
+
+      // delete event task, kecuali task_id 0
+      await tx.eventTask.deleteMany({
+        where: {
+          visit_event_id: visitEvent.id,
+          task_id: {
+            not: 0,
+          },
+        },
+      });
+
+      // menyimpan waktu
+      for (const task of validated) {
+        await tx.eventTask.create({
+          data: {
+            visit_id: task.kodebooking,
+            task_id: task.taskid,
+            status: "SEND",
+            event_time: parseWibDateString(task.wakturs),
+            visit_event_id: visitEvent.id,
+          },
+        });
+      }
+    });
+
+    res.json({
+      success: true,
+      message: "Visit events synced successfully.",
+      data: validated,
+    });
+  } catch (error) {
+    console.error("Failed to sync visit events:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to sync visit events",
       error: (error as Error).message,
     });
   }

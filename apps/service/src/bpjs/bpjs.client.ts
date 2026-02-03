@@ -54,6 +54,35 @@ export async function getJadwalDokter(kodePoli: string, tanggal: string) {
   return response.data;
 }
 
+export async function getListTaskByKodebooking(kodebooking: string) {
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const signature = generateSignature(CONST_ID, SECRET_KEY, timestamp);
+
+  const response = await axios.post(
+    `${BPJS_BASE_URL}/antrean/getlisttask`,
+    {
+      kodebooking,
+    },
+    {
+      headers: {
+        "x-cons-id": CONST_ID,
+        "x-timestamp": timestamp,
+        "x-signature": signature,
+        user_key: SECRET_KEY,
+      },
+      timeout: 10000,
+    },
+  );
+
+  // Response BPJS terenkripsi, perlu didekripsi
+  if (response.data.response) {
+    const decrypted = decryptBpjsResponse(response.data.response, timestamp);
+    return JSON.parse(decrypted);
+  }
+
+  return response.data;
+}
+
 /**
  * Fetch semua informasi poli dari BPJS API
  */

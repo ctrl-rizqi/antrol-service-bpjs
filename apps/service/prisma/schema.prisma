@@ -37,6 +37,7 @@ model VisitEvent {
   // Relasi dari EventTask
   EventTasks EventTask[]
 
+  syncedAt  DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 
@@ -45,14 +46,15 @@ model VisitEvent {
 }
 
 model EventTask {
-  id      BigInt @id @default(autoincrement())
-  task_id Int    @default(0) // "0", "3", "4", "5"
+  id       BigInt @id @default(autoincrement())
+  task_id  Int    @default(0) // "0", "3" ... "7"
+  visit_id String @db.VarChar(50) // no rawat
 
   // Relasi dari VisitEvent
   visit_event_id BigInt
   VisitEvent     VisitEvent @relation(fields: [visit_event_id], references: [id], onDelete: Cascade)
 
-  status              TaskEventStatus @default(FAILED) // "DONE", "FAILED", "PENDING"
+  status              TaskEventStatus @default(FAILED) // "DONE", "FAILED", "SEND"
   event_time          DateTime // Waktu REGISTER terjadi di sistem sumber
   original_event_time DateTime? // Waktu asli dari sumber (jika terjadi clamping)
 

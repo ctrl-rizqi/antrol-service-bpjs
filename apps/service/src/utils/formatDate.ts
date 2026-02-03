@@ -60,3 +60,29 @@ export function toFaceValueUTC(dateInput: Date | string): Date {
   }
   return date;
 }
+
+/**
+ * Parses a WIB (Western Indonesian Time, UTC+7) date string into a Date object.
+ * @param wibDate The date string in "DD-MM-YYYY HH:mm:ss WIB" format.
+ * @returns A Date object representing the correct moment in time in UTC.
+ */
+export function parseWibDateString(wibDate: string): Date {
+  // wibDate format: "DD-MM-YYYY HH:mm:ss WIB"
+  const parts = wibDate.split(" ");
+  if (parts.length < 2) {
+    throw new Error("Invalid WIB date string format");
+  }
+  const datePart = parts[0];
+  const timePart = parts[1];
+
+  const [day, month, year] = datePart.split("-").map(Number);
+  const [hours, minutes, seconds] = timePart.split(":").map(Number);
+
+  // Create a UTC date. Month is 0-indexed in JavaScript.
+  const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
+
+  // The time is in WIB (UTC+7), so we subtract 7 hours to get the actual UTC time.
+  utcDate.setUTCHours(utcDate.getUTCHours() - 7);
+
+  return utcDate;
+}

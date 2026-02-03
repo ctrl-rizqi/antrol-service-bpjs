@@ -18,7 +18,7 @@ import { Route as DashboardVisitEventIndexRouteImport } from './routes/dashboard
 import { Route as DashboardPoliExceptionIndexRouteImport } from './routes/dashboard/poli-exception/index'
 import { Route as DemoFormSimpleRouteImport } from './routes/demo/form.simple'
 import { Route as DemoFormAddressRouteImport } from './routes/demo/form.address'
-import { Route as DashboardVisitEventViewRouteImport } from './routes/dashboard/visit-event/view'
+import { Route as DashboardVisitEventViewIdRouteImport } from './routes/dashboard/visit-event/view/$id'
 
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: '/dashboard',
@@ -67,11 +67,12 @@ const DemoFormAddressRoute = DemoFormAddressRouteImport.update({
   path: '/demo/form/address',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardVisitEventViewRoute = DashboardVisitEventViewRouteImport.update({
-  id: '/visit-event/view',
-  path: '/visit-event/view',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
+const DashboardVisitEventViewIdRoute =
+  DashboardVisitEventViewIdRouteImport.update({
+    id: '/visit-event/view/$id',
+    path: '/visit-event/view/$id',
+    getParentRoute: () => DashboardRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -79,22 +80,22 @@ export interface FileRoutesByFullPath {
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/dashboard/': typeof DashboardIndexRoute
-  '/dashboard/visit-event/view': typeof DashboardVisitEventViewRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/dashboard/poli-exception/': typeof DashboardPoliExceptionIndexRoute
   '/dashboard/visit-event/': typeof DashboardVisitEventIndexRoute
+  '/dashboard/visit-event/view/$id': typeof DashboardVisitEventViewIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/dashboard': typeof DashboardIndexRoute
-  '/dashboard/visit-event/view': typeof DashboardVisitEventViewRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/dashboard/poli-exception': typeof DashboardPoliExceptionIndexRoute
   '/dashboard/visit-event': typeof DashboardVisitEventIndexRoute
+  '/dashboard/visit-event/view/$id': typeof DashboardVisitEventViewIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,11 +104,11 @@ export interface FileRoutesById {
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/dashboard/': typeof DashboardIndexRoute
-  '/dashboard/visit-event/view': typeof DashboardVisitEventViewRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/dashboard/poli-exception/': typeof DashboardPoliExceptionIndexRoute
   '/dashboard/visit-event/': typeof DashboardVisitEventIndexRoute
+  '/dashboard/visit-event/view/$id': typeof DashboardVisitEventViewIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,22 +118,22 @@ export interface FileRouteTypes {
     | '/demo/table'
     | '/demo/tanstack-query'
     | '/dashboard/'
-    | '/dashboard/visit-event/view'
     | '/demo/form/address'
     | '/demo/form/simple'
     | '/dashboard/poli-exception/'
     | '/dashboard/visit-event/'
+    | '/dashboard/visit-event/view/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/demo/table'
     | '/demo/tanstack-query'
     | '/dashboard'
-    | '/dashboard/visit-event/view'
     | '/demo/form/address'
     | '/demo/form/simple'
     | '/dashboard/poli-exception'
     | '/dashboard/visit-event'
+    | '/dashboard/visit-event/view/$id'
   id:
     | '__root__'
     | '/'
@@ -140,11 +141,11 @@ export interface FileRouteTypes {
     | '/demo/table'
     | '/demo/tanstack-query'
     | '/dashboard/'
-    | '/dashboard/visit-event/view'
     | '/demo/form/address'
     | '/demo/form/simple'
     | '/dashboard/poli-exception/'
     | '/dashboard/visit-event/'
+    | '/dashboard/visit-event/view/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -221,11 +222,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoFormAddressRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard/visit-event/view': {
-      id: '/dashboard/visit-event/view'
-      path: '/visit-event/view'
-      fullPath: '/dashboard/visit-event/view'
-      preLoaderRoute: typeof DashboardVisitEventViewRouteImport
+    '/dashboard/visit-event/view/$id': {
+      id: '/dashboard/visit-event/view/$id'
+      path: '/visit-event/view/$id'
+      fullPath: '/dashboard/visit-event/view/$id'
+      preLoaderRoute: typeof DashboardVisitEventViewIdRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
   }
@@ -233,16 +234,16 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteRouteChildren {
   DashboardIndexRoute: typeof DashboardIndexRoute
-  DashboardVisitEventViewRoute: typeof DashboardVisitEventViewRoute
   DashboardPoliExceptionIndexRoute: typeof DashboardPoliExceptionIndexRoute
   DashboardVisitEventIndexRoute: typeof DashboardVisitEventIndexRoute
+  DashboardVisitEventViewIdRoute: typeof DashboardVisitEventViewIdRoute
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardIndexRoute: DashboardIndexRoute,
-  DashboardVisitEventViewRoute: DashboardVisitEventViewRoute,
   DashboardPoliExceptionIndexRoute: DashboardPoliExceptionIndexRoute,
   DashboardVisitEventIndexRoute: DashboardVisitEventIndexRoute,
+  DashboardVisitEventViewIdRoute: DashboardVisitEventViewIdRoute,
 }
 
 const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(

@@ -19,6 +19,46 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - antrol-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: production
+    container_name: antrol-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: mysql://antrol:${MYSQL_PASSWORD}@mysql:3306/antrol_service
+    ports:
+      - "3001:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./apps/service/prisma:/app/prisma
+    networks:
+      - antrol-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: production
+    container_name: antrol-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - antrol-network
+
+networks:
+  antrol-network:
+    driver: bridge
 
 volumes:
   mysql_data:

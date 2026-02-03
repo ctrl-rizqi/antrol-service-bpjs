@@ -173,10 +173,11 @@ export async function processUpdateTask(task: any, force: boolean = false) {
   }
 
   // 3. Kirim ke BPJS (Update Waktu)
+  const timeOffset = 7 * 60 * 60 * 1000;
   const payload = {
     kodebooking: task.VisitEvent.visit_id,
     taskid: task.task_id,
-    waktu: task.event_time.getTime(), // Unix miliseconds, contoh: 1616559330000
+    waktu: task.event_time.getTime() - timeOffset, // Unix miliseconds, contoh: 1616559330000
   };
 
   // Validasi Payload

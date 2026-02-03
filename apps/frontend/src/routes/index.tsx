@@ -11,9 +11,7 @@ function App() {
         <h1 className="text-4xl font-bold tracking-tight">
           Selamat Datang di Antrol Service
         </h1>
-        <p className="text-lg text-muted-foreground">
-          Ini adalah halaman Landing Page (Tanpa Sidebar).
-        </p>
+        <p className="text-lg text-muted-foreground">Aplikasi Antrean Online</p>
         <Link
           to="/dashboard"
           className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"

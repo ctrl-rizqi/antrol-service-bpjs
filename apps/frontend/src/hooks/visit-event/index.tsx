@@ -1,6 +1,16 @@
 import { api } from '@/api'
-import { fetchVisitEvent, fetchVisitEventTasks } from '@/services/visit-event'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { EventTask, VisitEvent } from '@/interface/visit-event'
+import {
+  fetchVisitEvent,
+  fetchVisitEventTasks,
+  syncVisitEvent,
+} from '@/services/visit-event'
+import {
+  useMutation,
+  useQuery,
+  type UseMutationOptions,
+} from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 
 export const useVisitEvent = (
   search: string,
@@ -9,11 +19,20 @@ export const useVisitEvent = (
   startDate?: string,
   endDate?: string,
 ) => {
+  const [debouncedSearch, setDebouncedSearch] = useState(search)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 500)
+    return () => clearTimeout(handler)
+  }, [search])
+
   return useQuery({
-    queryKey: ['visit-event', search, page, limit, startDate, endDate],
+    queryKey: ['visit-event', debouncedSearch, page, limit, startDate, endDate],
     queryFn: async () =>
-      fetchVisitEvent(search, page, limit, startDate, endDate),
-    staleTime: 1000 * 60,
+      fetchVisitEvent(debouncedSearch, page, limit, startDate, endDate),
+    staleTime: 1000 * 60 * 5,
   })
 }
 
@@ -25,30 +44,41 @@ export const useVisitEventTasks = (id: string) => {
   })
 }
 
-export const useValidateVisitEvent = () => {
-  const queryClient = useQueryClient()
+export const useValidateVisitEvent = (
+  options?: UseMutationOptions<
+    {
+      data: VisitEvent & {
+        EventTasks: EventTask[]
+      }
+    },
+    Error,
+    string
+  >,
+) => {
   return useMutation({
     mutationFn: (kodebooking: string) => {
       return api.post('/admin/visit-event/revalidate', { kodebooking })
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['visit-event'],
-      })
-    },
+    ...options,
   })
 }
 
-export const useResendVisitEvent = () => {
-  const queryClient = useQueryClient()
+export const useResendVisitEvent = (
+  options?: UseMutationOptions<{ data: EventTask[] }, Error, string>,
+) => {
   return useMutation({
     mutationFn: (kodebooking: string) => {
       return api.post('/admin/visit-event/resend', { kodebooking })
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['visit-event'],
-      })
-    },
+    ...options,
+  })
+}
+
+export const useSyncVisitEvent = (
+  options?: UseMutationOptions<{ data: EventTask[] }, Error, string>,
+) => {
+  return useMutation({
+    mutationFn: (kodebooking: string) => syncVisitEvent(kodebooking),
+    ...options,
   })
 }

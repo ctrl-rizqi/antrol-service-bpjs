@@ -1,6 +1,10 @@
 import { api } from '@/api'
 import type { PaginationResponse } from '@/interface/response'
-import type { VisitEvent, EventTask } from '@/interface/visit-event'
+import type {
+  VisitEvent,
+  EventTask,
+  VisitEventLog,
+} from '@/interface/visit-event'
 
 export const fetchVisitEvent = async (
   search?: string,
@@ -10,7 +14,9 @@ export const fetchVisitEvent = async (
   endDate?: string,
 ) => {
   const response = await api.get<
-    PaginationResponse<VisitEvent & { EventTasks: EventTask[] }[]>
+    PaginationResponse<
+      VisitEvent & { EventTasks: EventTask & { logs: VisitEventLog[] }[] }[]
+    >
   >('/admin/visit-event', {
     params: { search, page, limit, startDate, endDate },
   })
@@ -20,8 +26,16 @@ export const fetchVisitEvent = async (
 
 export const fetchVisitEventTasks = async (id: string) => {
   const response = await api.get<
-    PaginationResponse<VisitEvent & { EventTasks: EventTask[] }>
+    PaginationResponse<
+      VisitEvent & { EventTasks: EventTask & { logs: VisitEventLog[] }[] }
+    >
   >(`/admin/visit-event/${id}/tasks`)
+
+  return response.data
+}
+
+export const syncVisitEvent = async (kodebooking: string) => {
+  const response = await api.post(`/admin/visit-event/sync`, { kodebooking })
 
   return response.data
 }

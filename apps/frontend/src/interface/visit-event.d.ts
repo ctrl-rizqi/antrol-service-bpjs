@@ -14,6 +14,7 @@ export type VisitEvent = {
   payload: string
   createdAt: string
   updatedAt: string
+  syncedAt: string | null
 }
 
 export type EventTask = {
@@ -26,7 +27,7 @@ export type EventTask = {
   createdAt: string
   updatedAt: string
 }
-E
+
 export type VisitEventPayload = {
   jenis_kunjungan: number
   status_poli: string
@@ -36,4 +37,18 @@ export type VisitEventPayload = {
   kuota: number
   sisa_kuota: number
   estimasi_dilayani: number
+}
+
+export type VisitEventLog = {
+  id: string
+  visit_id: string
+  task_id: string
+  event_time: string
+  payload: string
+  http_code: number
+  retry_count: number
+  last_error: string
+  sentAt: string
+  createdAt: string
+  updatedAt: string
 }

@@ -105,6 +105,7 @@ async function createRegistration(
           taskProgress.task.map((task) =>
             tx.eventTask.create({
               data: {
+                visit_id: row.no_rawat,
                 event_time: task.date, // Gunakan waktu spesifik per task
                 original_event_time: task.original_date, // Simpan waktu asli jika ada clamping
                 task_id: task.task_id,

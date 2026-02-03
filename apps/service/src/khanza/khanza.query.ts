@@ -53,7 +53,6 @@ export async function fetchRegistrations(
     WHERE rp.kd_pj = 'BPJ'
     AND rp.tgl_registrasi = ?
     AND rp.jam_reg >= ?
-    AND rp.jenis_kunjungan IS NOT NULL
     ORDER BY
       rp.tgl_registrasi,
       rp.jam_reg
