@@ -7,9 +7,8 @@ import { fetchRegistrationByNoReg } from "../khanza/khanza.query";
 import { checkTaskId, processRegistrationRow } from "../poller/registration";
 import { processRegistrationTask, processUpdateTask } from "../poller/queue";
 import { updateDateCursor } from "../domain/cursors";
-import { getListTaskByKodebooking, sendToBpjs } from "../bpjs/bpjs.client";
+import { getListTaskByKodebooking } from "../bpjs/bpjs.client";
 import { listTasksArraySchema } from "../validator/listtask-validator";
-import z from "zod";
 import { noContentResponseSchema } from "../utils/NoContentResponse";
 import { parseWibDateString, toFaceValueUTC } from "../utils/formatDate";
 
@@ -34,10 +33,10 @@ router.get("/visit-event", async (req: Request, res: Response) => {
   if (startDate || endDate) {
     where.tanggal = {};
     if (startDate) {
-      where.tanggal.gte = new Date(startDate);
+      where.tanggal.gte = new Date(`${startDate}T00:00:00.000Z`);
     }
     if (endDate) {
-      const end = new Date(endDate);
+      const end = new Date(`${endDate}T00:00:00.000Z`);
       if (endDate.length === 10) end.setUTCHours(23, 59, 59, 999);
       where.tanggal.lte = end;
     }
@@ -273,7 +272,7 @@ router.post("/cursor/reset", async (req: Request, res: Response) => {
     });
   }
 
-  const newDate = new Date(date);
+  const newDate = new Date(`${date}T00:00:00.000Z`);
   if (isNaN(newDate.getTime())) {
     return res.status(400).json({
       success: false,
@@ -283,7 +282,7 @@ router.post("/cursor/reset", async (req: Request, res: Response) => {
 
   try {
     // Set time to start of day
-    newDate.setHours(0, 0, 0, 0);
+    // newDate.setHours(0, 0, 0, 0); // This was a bug (used local timezone) and is now redundant.
 
     await updateDateCursor({
       eventType,

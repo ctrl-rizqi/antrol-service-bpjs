@@ -141,6 +141,17 @@ export async function processRegistrationRow(
     row.jam_registrasi,
   );
 
+  // Verifikasi apakah tanggal valid setelah normalisasi
+  if (isNaN(eventTime.getTime())) {
+    await quarantineRegistration(
+      row,
+      new Date(), // Gunakan waktu sekarang sebagai fallback untuk timestamp karantina
+      `Invalid registration date/time provided: tgl_registrasi='${row.tgl_registrasi}', jam_registrasi='${row.jam_registrasi}'`,
+      "HIGH",
+    );
+    return; // Hentikan proses untuk row ini
+  }
+
   // FIX: Adjust eventTime to ignore timezone (store as Face Value in UTC)
   eventTime = toFaceValueUTC(eventTime);
 

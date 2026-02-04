@@ -237,20 +237,18 @@ export async function pollQueueRegistration() {
         `0️⃣ [POLL] Polling queue registration... (cursor: ${cursorDate.date})`,
       );
       // Ambil data yang memiliki setidaknya satu task dengan status "DONE"
-      // Filter berdasarkan tanggal cursor agar query tetap efisien
+      // Filter tanggal dihapus agar bisa memproses ulang data lama yang mungkin tersangkut
       const tasks = await prisma.eventTask.findMany({
         take: 10, // Ambil 10 data per batch untuk diproses paralel
         where: {
           status: "DONE",
           task_id: 0,
-          VisitEvent: {
-            tanggal: {
-              gte: cursorDate.date,
-            },
-          },
         },
         include: {
           VisitEvent: true,
+        },
+        orderBy: {
+          event_time: "asc", // Proses yang paling lama dulu
         },
       });
 
@@ -263,39 +261,8 @@ export async function pollQueueRegistration() {
         // Ini juga berfungsi sebagai delay untuk retry jika ada task yang gagal dan diambil lagi di batch berikutnya
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
       } else {
-        // Sync local cursor with DB in case it was reset via API
-        const currentDbCursor = await dateCursor({ eventType: "REGISTER" });
-        if (currentDbCursor.date.getTime() !== cursorDate.date.getTime()) {
-          console.log(
-            `[POLL] Cursor change detected. Switching from ${cursorDate.date.toISOString()} to ${currentDbCursor.date.toISOString()}`,
-          );
-          cursorDate = currentDbCursor;
-          continue;
-        }
-
-        // Jika tidak ada data (tasks kosong), cek apakah cursor perlu dimajukan
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const currentCursorDate = new Date(cursorDate.date);
-
-        // Jika cursor tertinggal dari hari ini, majukan 1 hari
-        if (currentCursorDate < today) {
-          const nextDate = new Date(currentCursorDate);
-          nextDate.setDate(nextDate.getDate() + 1);
-
-          await updateDateCursor({
-            eventType: "REGISTER", // Fix: Update cursor REGISTER, bukan CHECKIN agar tidak bentrok
-            newDate: nextDate,
-          });
-
-          console.log(
-            `[CURSOR] CHECKIN advanced to ${nextDate.toISOString().split("T")[0]}`,
-          );
-          cursorDate = { date: nextDate };
-        } else {
-          // Sudah catch-up dengan hari ini, tunggu data baru
-          await new Promise((resolve) => setTimeout(resolve, 60000)); // 1 menit
-        }
+        // Sudah tidak ada antrean, tunggu data baru
+        await new Promise((resolve) => setTimeout(resolve, 60000)); // 1 menit
       }
     } catch (error) {
       console.error("[ERROR] Queue poller iteration failed:", error);
@@ -319,16 +286,12 @@ export async function pollQueueTask() {
       );
 
       // Ambil data yang task_id 3-7 dan status DONE
+      // Filter tanggal dihapus agar bisa memproses ulang data lama yang mungkin tersangkut
       const tasks = await prisma.eventTask.findMany({
         take: 10,
         where: {
           status: "DONE",
           task_id: { in: [3, 4, 5, 6, 7] },
-          VisitEvent: {
-            tanggal: {
-              gte: cursorDate.date,
-            },
-          },
         },
         include: {
           VisitEvent: {
@@ -338,7 +301,7 @@ export async function pollQueueTask() {
           },
         },
         orderBy: {
-          event_time: "asc",
+          event_time: "asc", // Proses yang paling lama dulu
         },
       });
 
@@ -347,37 +310,8 @@ export async function pollQueueTask() {
 
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
       } else {
-        // Sync local cursor with DB in case it was reset via API
-        const currentDbCursor = await dateCursor({ eventType: "CHECKIN" });
-        if (currentDbCursor.date.getTime() !== cursorDate.date.getTime()) {
-          console.log(
-            `[POLL] Cursor change detected. Switching from ${cursorDate.date.toISOString()} to ${currentDbCursor.date.toISOString()}`,
-          );
-          cursorDate = currentDbCursor;
-          continue;
-        }
-
-        // Cursor logic
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const currentCursorDate = new Date(cursorDate.date);
-
-        if (currentCursorDate < today) {
-          const nextDate = new Date(currentCursorDate);
-          nextDate.setDate(nextDate.getDate() + 1);
-
-          await updateDateCursor({
-            eventType: "CHECKIN",
-            newDate: nextDate,
-          });
-
-          console.log(
-            `[CURSOR] CHECKIN advanced to ${nextDate.toISOString().split("T")[0]}`,
-          );
-          cursorDate = { date: nextDate };
-        } else {
-          await new Promise((resolve) => setTimeout(resolve, 60000));
-        }
+        // Sudah tidak ada antrean, tunggu data baru
+        await new Promise((resolve) => setTimeout(resolve, 60000)); // 1 menit
       }
     } catch (error) {
       console.error("[ERROR] Queue task poller iteration failed:", error);

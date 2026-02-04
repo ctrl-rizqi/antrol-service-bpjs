@@ -13,7 +13,7 @@ async function getOrFetchSchedule(
     where: {
       dokter_id: kd_dokter,
       poli_id: kd_poli,
-      tanggal: new Date(tanggal),
+      tanggal: new Date(`${tanggal}T00:00:00.000Z`),
     },
   });
 
@@ -49,7 +49,7 @@ async function getOrFetchSchedule(
       nama_dokter: jadwal.namadokter,
       poli_id: kd_poli,
       nama_poli: jadwal.namapoli,
-      tanggal: new Date(tanggal),
+      tanggal: new Date(`${tanggal}T00:00:00.000Z`),
       kuota_jkn: jadwal.kapasitaspasien,
       jam_mulai: jam_mulai.trim(),
       jam_selesai: jam_selesai.trim(),
@@ -111,7 +111,7 @@ export async function calculateSisaKuota(
     where: {
       dokter_id: parseInt(kd_dokter.toString()),
       poli_id: kd_poli,
-      tanggal: new Date(tanggal),
+      tanggal: new Date(`${tanggal}T00:00:00.000Z`),
     },
   });
 

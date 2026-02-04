@@ -3,6 +3,10 @@ import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import prisma from "./lib/prisma";
 import { khanzaDb } from "./khanza/khanza.client";
+// dotenv
+
+process.env.TZ = "Asia/Jakarta";
+process.env.TZ = process.env.TZ || "Asia/Jakarta";
 
 // controller
 import adminRouter from "./api/admin";

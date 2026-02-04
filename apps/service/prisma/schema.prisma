@@ -62,7 +62,7 @@ model EventTask {
   updatedAt DateTime? @updatedAt
 
   @@unique([visit_event_id, task_id])
-  @@index([status])
+  @@index([status, task_id, visit_id])
   @@index([event_time])
 }
 
@@ -105,10 +105,10 @@ model DoctorScheduleQuota {
 
 // Cursor sebagai penanda terakhir sinkronisasi data jadwal + kuota
 model VisitEventCursor {
-  id         BigInt          @id @default(autoincrement())
-  event_type VisitEventType? @default(REGISTER) // Jenis event terakhir yang diproses
+  id         BigInt         @id @default(autoincrement())
+  event_type VisitEventType @unique @default(REGISTER) // Jenis event terakhir yang diproses
   event_time DateTime // Waktu REGISTER terjadi di sistem sumber
-  createdAt  DateTime        @default(now())
+  createdAt  DateTime       @default(now())
 }
 
 // Log proses pengiriman Antrean API BPJS
@@ -127,6 +127,10 @@ model VisitEventLog {
   sentAt    DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
+
+  // index
+  @@index([visit_id, task_id])
+  @@index([sentAt])
 }
 
 // Pengecualian POLI

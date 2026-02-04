@@ -38,7 +38,7 @@ export function normalizeRegistrationDate(
   eventTime: Date;
 } {
   const { tanggalOnly, tanggalDateTime } = toLocalDateParts(tglRegistrasi);
-  const eventTime = new Date(`${tanggalOnly}T${jamRegistrasi}`);
+  const eventTime = new Date(`${tanggalOnly}T${jamRegistrasi}Z`);
   return { tanggalOnly, tanggalDateTime, eventTime };
 }
 

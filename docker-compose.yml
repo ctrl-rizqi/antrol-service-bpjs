@@ -37,6 +37,8 @@ services:
       mysql:
         condition: service_healthy
     volumes:
+      - /etc/localtime:/etc/localtime:ro  # sync dengan host
+      - /etc/timezone:/etc/timezone:ro
       - ./apps/service/prisma:/app/prisma
     networks:
       - antrol-network
