@@ -27,6 +27,15 @@ router.get("/visit-event", async (req: Request, res: Response) => {
       { visit_id: { contains: search } },
       { no_rkm_medis: { contains: search } },
       { nomor_antrean: { contains: search } },
+      {
+        flags: {
+          some: {
+            category: {
+              name: { contains: search },
+            },
+          },
+        },
+      },
     ];
   }
 
@@ -47,6 +56,11 @@ router.get("/visit-event", async (req: Request, res: Response) => {
       where,
       include: {
         EventTasks: true,
+        flags: {
+          include: {
+            category: true,
+          },
+        },
       },
       orderBy: {
         tanggal: "desc",
@@ -55,7 +69,8 @@ router.get("/visit-event", async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      ...paginatedVisitEvents,
+      data: paginatedVisitEvents.data,
+      meta: paginatedVisitEvents.meta,
     });
   } catch (error) {
     console.error("Failed to fetch validation issues:", error);
@@ -421,6 +436,51 @@ router.post("/visit-event/sync", async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to sync visit events",
+      error: (error as Error).message,
+    });
+  }
+});
+
+// Menambahkan flag/kategori pada visitEvent
+// Input: { kodebooking: }
+router.post("/visit-event/category", async (req: Request, res: Response) => {
+  const { kodebooking, category } = req.body || {};
+
+  if (!kodebooking || !category) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing required fields.",
+    });
+  }
+
+  try {
+    const visitEvent = await prisma.flag.upsert({
+      where: { id: kodebooking },
+      update: {
+        category: {
+          connectOrCreate: {
+            where: { name: category },
+            create: { name: category },
+          },
+        },
+      },
+      create: {
+        visit_id: kodebooking,
+        category_id: category,
+      },
+      include: { category: true },
+    });
+
+    res.json({
+      success: true,
+      message: "Visit event category updated successfully.",
+      data: visitEvent,
+    });
+  } catch (error) {
+    console.error("Failed to update visit event category:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update visit event category",
       error: (error as Error).message,
     });
   }

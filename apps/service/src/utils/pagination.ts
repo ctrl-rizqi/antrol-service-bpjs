@@ -1,5 +1,4 @@
 import { Request } from "express";
-import prisma, { Prisma } from "../lib/prisma";
 
 interface PaginationResult<T> {
   data: T[];

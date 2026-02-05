@@ -1,5 +1,20 @@
 import type { E } from 'node_modules/@faker-js/faker/dist/airline-CWrCIUHH'
 
+export type Flag = {
+  id: string
+  visit_id: string
+  category_id: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type Category = {
+  id: string
+  name: string
+  createdAt: string
+  updatedAt: string
+}
+
 export type VisitEvent = {
   id: string
   visit_id: string

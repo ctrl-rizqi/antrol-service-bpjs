@@ -11,6 +11,7 @@ process.env.TZ = process.env.TZ || "Asia/Jakarta";
 // controller
 import adminRouter from "./api/admin";
 import poliRouter from "./api/poli";
+import categoryRouter from "./api/category";
 
 // Scheduler JOB
 import { startPollerScheduler } from "./job/poller.scheduler";
@@ -65,6 +66,7 @@ async function checkDatabaseSIMRS() {
 
   app.use("/api/admin", adminRouter);
   app.use("/api/poli", poliRouter);
+  app.use("/api/category", categoryRouter);
 
   process.on("uncaughtException", async (err) => {
     await prisma.$disconnect();

@@ -106,8 +106,10 @@ async function createRegistration(
             tx.eventTask.create({
               data: {
                 visit_id: row.no_rawat,
-                event_time: task.date, // Gunakan waktu spesifik per task
-                original_event_time: task.original_date, // Simpan waktu asli jika ada clamping
+                // Simpan waktu VALID (Clamped) di event_time agar urut dan sesuai kebutuhan BPJS
+                // Simpan waktu ASLI (Raw) di original_event_time untuk audit jika berbeda
+                event_time: task.date,
+                original_event_time: task.original_date ?? null,
                 task_id: task.task_id,
                 status: task.status,
                 visit_event_id: createdEvent.id,
@@ -329,6 +331,7 @@ export async function pollRegisterEvent() {
       });
       const exceptionSet = new Set(exceptions.map((e) => e.poli_id));
 
+      const processingPromises: Promise<void>[] = [];
       for (const row of rows) {
         // cek apakah poli di pengecualian
         if (exceptionSet.has(row.kd_poli)) {
@@ -351,18 +354,27 @@ export async function pollRegisterEvent() {
           continue;
         }
 
-        try {
-          const taskProgress = await checkTaskId(row);
-          await processRegistrationRow(row, taskProgress);
-          processedCount++;
-        } catch (error) {
-          errorCount++;
-          console.error(
-            `[ERROR] Failed to process row: ${row.no_rawat}`,
-            error,
-          );
-        }
+        // Proses secara paralel dengan memasukkan ke array promise
+        // Kita batasi concurrency secara sederhana dengan menunggu jika batch sudah penuh (opsional, tapi aman untuk DB)
+        const processPromise = (async () => {
+          try {
+            const taskProgress = await checkTaskId(row);
+            await processRegistrationRow(row, taskProgress);
+            processedCount++;
+          } catch (error) {
+            errorCount++;
+            console.error(
+              `[ERROR] Failed to process row: ${row.no_rawat}`,
+              error,
+            );
+          }
+        })();
+
+        processingPromises.push(processPromise);
       }
+
+      // Tunggu semua proses dalam batch hari ini selesai
+      await Promise.all(processingPromises);
 
       console.log(
         `[POLL] Processed: ${processedCount}, Errors: ${errorCount}, Total: ${rows.length}`,

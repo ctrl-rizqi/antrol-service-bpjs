@@ -40,6 +40,7 @@ model VisitEvent {
   syncedAt  DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
+  flags     Flag[]
 
   @@index([event_time])
   @@index([tanggal, poli_id, dokter_id])
@@ -142,6 +143,34 @@ model PoliException {
   updatedAt DateTime? @updatedAt
 
   @@unique([poli_id])
+}
+
+// Kategori
+model Category {
+  id        BigInt    @id @default(autoincrement())
+  name      String    @db.VarChar(100)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+  flags     Flag[]
+
+  @@unique([name])
+}
+
+// Flag untuk VisitEvent
+// Boleh lebih dari 1 flag
+model Flag {
+  id          BigInt     @id @default(autoincrement())
+  visit_id    String     @db.VarChar(50) // no rawat
+  visit_event VisitEvent @relation(fields: [visit_id], references: [visit_id], onDelete: Cascade)
+
+  category_id BigInt
+  category    Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@unique([visit_id, category_id])
+  @@index([category_id])
 }
 
 enum VisitEventType {

@@ -173,11 +173,17 @@ export async function processUpdateTask(task: any, force: boolean = false) {
   }
 
   // 3. Kirim ke BPJS (Update Waktu)
-  const timeOffset = 7 * 60 * 60 * 1000;
+  // Koreksi: Data di DB tersimpan dengan offset ganda (Khanza 15:02 -> DB 22:02).
+  // Kita butuh 08:02 UTC. Jadi 22:02 - 14 jam = 08:02.
+  const timeOffset = 14 * 60 * 60 * 1000;
+
+  // Gunakan event_time karena sudah menyimpan waktu yang valid (clamped)
+  const eventTime = task.event_time;
+
   const payload = {
     kodebooking: task.VisitEvent.visit_id,
     taskid: task.task_id,
-    waktu: task.event_time.getTime() - timeOffset, // Unix miliseconds, contoh: 1616559330000
+    waktu: eventTime.getTime() - timeOffset,
   };
 
   // Validasi Payload
