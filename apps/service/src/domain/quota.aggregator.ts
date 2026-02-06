@@ -1,4 +1,4 @@
-import prisma from "../lib/prisma";
+import prisma, { Prisma } from "../lib/prisma";
 import { getJadwalDokter } from "../bpjs/bpjs.client";
 import { JadwalDokterResponse } from "../types/bpjs";
 import { AggregatedJadwal } from "../validator/aggregated-validator";
@@ -43,20 +43,38 @@ async function getOrFetchSchedule(
   // Simpan ke database
   const [jam_mulai, jam_selesai] = jadwal.jadwal.split("-");
 
-  return prisma.doctorScheduleQuota.create({
-    data: {
-      dokter_id: kd_dokter,
-      nama_dokter: jadwal.namadokter,
-      poli_id: kd_poli,
-      nama_poli: jadwal.namapoli,
-      tanggal: new Date(`${tanggal}T00:00:00.000Z`),
-      kuota_jkn: jadwal.kapasitaspasien,
-      jam_mulai: jam_mulai.trim(),
-      jam_selesai: jam_selesai.trim(),
-      source: "AUTO_AGGREGATOR",
-      fetchedAt: new Date(),
-    },
-  });
+  try {
+    return await prisma.doctorScheduleQuota.create({
+      data: {
+        dokter_id: kd_dokter,
+        nama_dokter: jadwal.namadokter,
+        poli_id: kd_poli,
+        nama_poli: jadwal.namapoli,
+        tanggal: new Date(`${tanggal}T00:00:00.000Z`),
+        kuota_jkn: jadwal.kapasitaspasien,
+        jam_mulai: jam_mulai.trim(),
+        jam_selesai: jam_selesai.trim(),
+        source: "AUTO_AGGREGATOR",
+        fetchedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const existingRetry = await prisma.doctorScheduleQuota.findFirst({
+        where: {
+          dokter_id: kd_dokter,
+          poli_id: kd_poli,
+          tanggal: new Date(`${tanggal}T00:00:00.000Z`),
+          jam_mulai: jam_mulai.trim(),
+        },
+      });
+      if (existingRetry) return existingRetry;
+    }
+    throw error;
+  }
 }
 
 export async function aggregatorJadwal(

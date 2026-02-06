@@ -172,18 +172,27 @@ export async function processUpdateTask(task: any, force: boolean = false) {
     }
   }
 
-  // 3. Kirim ke BPJS (Update Waktu)
-  // Koreksi: Data di DB tersimpan dengan offset ganda (Khanza 15:02 -> DB 22:02).
-  // Kita butuh 08:02 UTC. Jadi 22:02 - 14 jam = 08:02.
-  const timeOffset = 14 * 60 * 60 * 1000;
+  const dbDate = new Date(task.original_event_time);
 
-  // Gunakan event_time karena sudah menyimpan waktu yang valid (clamped)
-  const eventTime = task.event_time;
+  // Ambil komponen waktu dari UTC (ini sebenarnya waktu WIB yang disimpan)
+  const year = dbDate.getUTCFullYear();
+  const month = dbDate.getUTCMonth();
+  const day = dbDate.getUTCDate();
+  const hours = dbDate.getUTCHours();
+  const minutes = dbDate.getUTCMinutes();
+  const seconds = dbDate.getUTCSeconds();
+
+  // Buat Date baru dengan komponen tersebut sebagai waktu lokal
+  const localDate = new Date(year, month, day, hours, minutes, seconds);
+
+  console.log("DB Date (UTC):", dbDate.toISOString());
+  console.log("Local Date:", localDate.toString());
+  console.log("Timestamp:", localDate.getTime());
 
   const payload = {
     kodebooking: task.VisitEvent.visit_id,
     taskid: task.task_id,
-    waktu: eventTime.getTime() - timeOffset,
+    waktu: localDate.getTime(),
   };
 
   // Validasi Payload
@@ -239,6 +248,13 @@ export async function pollQueueRegistration() {
   // Loop polling
   while (true) {
     try {
+      // Hitung batas akhir hari ini (WIB) untuk mencegah pengiriman data masa depan
+      const now = new Date();
+      const offset = 7 * 60 * 60 * 1000;
+      const todayWIB = new Date(now.getTime() + offset);
+      const todayStr = todayWIB.toISOString().split("T")[0];
+      const endOfToday = new Date(`${todayStr}T23:59:59.999Z`);
+
       console.log(
         `0️⃣ [POLL] Polling queue registration... (cursor: ${cursorDate.date})`,
       );
@@ -249,6 +265,9 @@ export async function pollQueueRegistration() {
         where: {
           status: "DONE",
           task_id: 0,
+          event_time: {
+            lte: endOfToday,
+          },
         },
         include: {
           VisitEvent: true,

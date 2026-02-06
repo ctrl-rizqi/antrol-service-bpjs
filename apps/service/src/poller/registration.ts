@@ -1,5 +1,5 @@
 import { fetchRegistrations } from "../khanza/khanza.query";
-import prisma from "../lib/prisma";
+import prisma, { Prisma } from "../lib/prisma";
 import { validateRegistration } from "../validator/registation-validator";
 import { aggregatorJadwal } from "../domain/quota.aggregator";
 import { normalizeRegistrationDate, toFaceValueUTC } from "../utils/formatDate";
@@ -123,6 +123,15 @@ async function createRegistration(
     console.log(`[CREATE] Registration created: ${row.no_rawat}`);
     return true;
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      console.log(
+        `[SKIP] Registration already exists (race condition): ${row.no_rawat}`,
+      );
+      return false;
+    }
     console.error(
       `[ERROR] Failed to create registration: ${row.no_rawat}`,
       error,
