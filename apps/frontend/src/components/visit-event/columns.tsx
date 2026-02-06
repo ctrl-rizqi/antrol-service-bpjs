@@ -1,4 +1,3 @@
-import { Badge } from '../ui/badge'
 import { Link } from '@tanstack/react-router'
 import type {
   Category,
