@@ -173,6 +173,31 @@ model Flag {
   @@index([category_id])
 }
 
+// Snapshot untuk data pasien registrasi
+model RegistrationSnapshot {
+  id                  BigInt   @id @default(autoincrement())
+  visit_id            String   @unique @db.VarChar(50) // no rawat
+  event_time          String // Waktu REGISTER terjadi di sistem sumber atau waktu registrasi (UNIX format)
+  event_time_datetime DateTime @db.Date // Digunakan untuk query dan sorting
+  no_rkm_medis        String   @db.VarChar(50)
+  sumber_data         String   @db.VarChar(100) // e.g., "SIRS", "BPJS HFIS"
+  tanggal             DateTime @db.Date // tanggal periksa
+  kodedokter          Int // kode dokter
+  kodepoli            String   @db.VarChar(20)
+  status_peserta      Boolean  @default(false) // Apakah pasien peserta BPJS
+  status_kunjungan    Boolean  @default(false) // Apakah peserta sudah berkunjung/selesai pemeriksaan
+
+  payload   Json      @db.Json // Snapshot data registrasi
+  fetchedAt DateTime // Waktu data diambil dari sistem sumber
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@index([visit_id])
+  @@index([event_time])
+  @@index([event_time_datetime])
+  @@index([tanggal])
+}
+
 enum VisitEventType {
   POLLER
   REGISTER

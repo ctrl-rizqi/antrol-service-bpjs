@@ -1,5 +1,6 @@
 import { khanzaRegistration } from "../types/khanza";
 import { khanzaDb } from "./khanza.client";
+import { toLocalDateParts } from "../utils/formatDate";
 
 export async function fetchRegistrations(
   lastDate: string,
@@ -119,4 +120,92 @@ export async function fetchRegistrationByNoReg(
 
   const registrationRows = rows as Array<khanzaRegistration>;
   return registrationRows.length > 0 ? registrationRows[0] : null;
+}
+
+export async function fetchTaskId3(visit_id: string): Promise<Array<{
+  visit_id: string;
+  task_id_3_original: string;
+  task_id_3_new: string;
+}> | null> {
+  const [rows] = await khanzaDb.query(
+    `
+    SELECT mb.no_rawat, mb.dikirim AS jam_mutasi, rp.task_id_3 FROM mutasi_berkas mb LEFT JOIN reg_periksa rp ON mb.no_rawat = rp.no_rawat 
+    WHERE mb.no_rawat = ?
+    `,
+    [visit_id],
+  );
+
+  const tasks = rows as Array<{
+    no_rawat: string;
+    jam_mutasi: string;
+    task_id_3: string;
+  }>;
+
+  if (tasks.length === 0) return null;
+
+  const formattedTasks = tasks.map((task) => ({
+    visit_id: task.no_rawat,
+    task_id_3_original: task.jam_mutasi,
+    task_id_3_new: task.task_id_3,
+  }));
+
+  return formattedTasks;
+}
+
+export async function fetchTaskId4(visit_id: string): Promise<Array<{
+  visit_id: string;
+  task_id_4_original: string;
+  task_id_4_new: string;
+}> | null> {
+  const [rows] = await khanzaDb.query(
+    `SELECT pr.no_rawat, pr.tgl_perawatan, pr.jam_rawat, rp.task_id_4 FROM pemeriksaan_ralan pr 
+    LEFT JOIN reg_periksa rp ON pr.no_rawat = rp.no_rawat WHERE pr.no_rawat = ?`,
+    [visit_id],
+  );
+  // Output:
+  // pr.tgl_perawatan: 2026-02-05T17:00:00.000Z
+  // pr.jam_rawat: 18:48:34
+
+  const tasks = rows as Array<{
+    no_rawat: string;
+    tgl_perawatan: Date;
+    jam_rawat: string;
+    task_id_4: string;
+  }>;
+
+  if (tasks.length === 0) return null;
+
+  const formattedTasks = tasks.map((task) => {
+    const { tanggalOnly } = toLocalDateParts(task.tgl_perawatan);
+    return {
+      visit_id: task.no_rawat,
+      task_id_4_original: `${tanggalOnly} ${task.jam_rawat}`,
+      task_id_4_new: task.task_id_4,
+    };
+  });
+
+  return formattedTasks;
+}
+
+export async function insertTaskId(
+  visit_id: string,
+  task_id_3?: Date,
+  task_id_4?: Date,
+  task_id_5?: Date,
+  task_id_6?: Date,
+  task_id_7?: Date,
+): Promise<void> {
+  const query = `
+    UPDATE reg_periksa 
+    SET task_id_3 = ?, task_id_4 = ? , task_id_5 = ?, task_id_6 = ?, task_id_7 = ?
+    WHERE no_rawat = ?
+  `;
+  await khanzaDb.query(query, [
+    task_id_3 || null,
+    task_id_4 || null,
+    task_id_5 || null,
+    task_id_6 || null,
+    task_id_7 || null,
+    visit_id,
+  ]);
 }

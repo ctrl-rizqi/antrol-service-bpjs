@@ -79,10 +79,20 @@ export function parseWibDateString(wibDate: string): Date {
   const [hours, minutes, seconds] = timePart.split(":").map(Number);
 
   // Create a UTC date. Month is 0-indexed in JavaScript.
-  const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
+  const utcDate = new Date(
+    Date.UTC(year, month - 1, day, hours, minutes, seconds),
+  );
 
   // The time is in WIB (UTC+7), so we subtract 7 hours to get the actual UTC time.
   utcDate.setUTCHours(utcDate.getUTCHours() - 7);
 
   return utcDate;
+}
+
+export function formatToYYYYMMDD(date: Date | string): string {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }

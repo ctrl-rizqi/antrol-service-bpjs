@@ -150,3 +150,76 @@ function decryptBpjsResponse(encryptedData: string, ts: string): string {
 
   return decompressed;
 }
+
+/**
+ * Fetch Pendaftaran Antrean per Tanggal dari BPJS API
+ */
+
+export async function getPendaftaranAntreanByTanggal(tanggal: string): Promise<
+  {
+    jeniskunjungan: number;
+    nomorreferensi: string;
+    createdtime: number;
+    kodebooking: string;
+    norekammedis: string;
+    nik: string;
+    nokapst: string;
+    noantrean: string;
+    kodepoli: string;
+    sumberdata: string;
+    estimasidilayani: number;
+    kodedokter: number;
+    jampraktek: string;
+    nohp: string;
+    tanggal: string;
+    ispeserta: boolean;
+    status: "Belum dilayani" | "Selesai dilayani";
+  }[]
+> {
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const signature = generateSignature(CONST_ID, SECRET_KEY, timestamp);
+
+  const response = await axios.get(
+    `${BPJS_BASE_URL}/antrean/pendaftaran/tanggal/${tanggal}`,
+    {
+      headers: {
+        "x-cons-id": CONST_ID,
+        "x-timestamp": timestamp,
+        "x-signature": signature,
+        user_key: SECRET_KEY,
+      },
+      timeout: 10000,
+    },
+  );
+
+  // Response BPJS terenkripsi, perlu didekripsi
+  if (response.data.response) {
+    const decrypted = decryptBpjsResponse(response.data.response, timestamp);
+    return JSON.parse(decrypted);
+  }
+
+  // cek apakah response array apa tidak
+  if (!Array.isArray(response.data)) {
+    return [];
+  }
+
+  return response.data as {
+    jeniskunjungan: number;
+    nomorreferensi: string;
+    createdtime: number;
+    kodebooking: string;
+    norekammedis: string;
+    nik: string;
+    nokapst: string;
+    noantrean: string;
+    kodepoli: string;
+    sumberdata: string;
+    estimasidilayani: number;
+    kodedokter: number;
+    jampraktek: string;
+    nohp: string;
+    tanggal: string;
+    ispeserta: boolean;
+    status: "Belum dilayani" | "Selesai dilayani";
+  }[];
+}
