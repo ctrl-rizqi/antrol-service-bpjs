@@ -4,6 +4,7 @@ import type {
   VisitEvent,
   EventTask,
   VisitEventLog,
+  AutoHealthVisitEvent,
 } from '@/interface/visit-event'
 
 export const fetchVisitEvent = async (
@@ -36,6 +37,12 @@ export const fetchVisitEventTasks = async (id: string) => {
 
 export const syncVisitEvent = async (kodebooking: string) => {
   const response = await api.post(`/admin/visit-event/sync`, { kodebooking })
+
+  return response.data
+}
+
+export const autoHealthVisitEvent = async (visit_id: string) => {
+  const response = await api.post<AutoHealthVisitEvent>(`/task-id/autorepair`, { visit_id })
 
   return response.data
 }

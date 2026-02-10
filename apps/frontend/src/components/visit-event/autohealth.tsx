@@ -1,36 +1,35 @@
-import { useResendVisitEvent } from '@/hooks/visit-event'
-import { useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { AlertCircleIcon, CheckCheckIcon, SendHorizonalIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { CheckCircle2 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useAutoHealthVisitEvent } from '@/hooks/visit-event'
+import { toast } from 'sonner'
+import { AlertCircleIcon, CheckCheckIcon } from 'lucide-react'
 
-export default function Resend({ visit_id }: { visit_id: string }) {
+export function VisitEventAutoHealth({ visit_id }: { visit_id: string }) {
   const QueryClient = useQueryClient()
 
-  const { mutateAsync: mutateAsyncResend, isPending: isResendPending } =
-    useResendVisitEvent({
+  const { mutateAsync: mutateAsyncAutoHealth, isPending: isAutoHealthPending } =
+    useAutoHealthVisitEvent({
       onSuccess: () => {
-        QueryClient.invalidateQueries({
-          queryKey: ['visit-event'],
-        })
-        toast.success('Resend Berhasil', {
+        QueryClient.invalidateQueries({ queryKey: ['visit-event'] })
+        toast.success('Auto Health Berhasil', {
           position: 'top-left',
           description: 'Data antrean telah berhasil dikirim ulang',
           icon: <CheckCheckIcon className="h-4 w-4" />,
         })
       },
       onError: (error) => {
-        toast.error('Resend Gagal', {
+        toast.error('Auto Health Gagal', {
           description:
             error instanceof Error
               ? error.message
-              : 'Terjadi kesalahan saat resend data antrean',
+              : 'Terjadi kesalahan saat auto health data antrean',
           icon: <AlertCircleIcon className="h-4 w-4" />,
         })
       },
     })
 
-  const handleResend = async () => {
+  const handleAutoHealth = async () => {
     if (!visit_id) {
       toast.error('Error', {
         position: 'top-left',
@@ -40,7 +39,7 @@ export default function Resend({ visit_id }: { visit_id: string }) {
       return
     }
     try {
-      await mutateAsyncResend(visit_id)
+      await mutateAsyncAutoHealth(visit_id)
     } catch (error) {
       console.error(error)
     }
@@ -52,11 +51,11 @@ export default function Resend({ visit_id }: { visit_id: string }) {
         variant="ghost"
         size="sm"
         className="justify-start p-0! w-full"
-        onClick={handleResend}
-        disabled={isResendPending}
+        onClick={handleAutoHealth}
+        disabled={isAutoHealthPending}
       >
-        <SendHorizonalIcon className="h-4 w-4" />
-        <span>Resend</span>
+        <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
+        <span>Auto Health</span>
       </Button>
     </>
   )

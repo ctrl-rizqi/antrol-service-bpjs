@@ -1,6 +1,11 @@
 import { api } from '@/api'
-import type { EventTask, VisitEvent } from '@/interface/visit-event'
+import type {
+  AutoHealthVisitEvent,
+  EventTask,
+  VisitEvent,
+} from '@/interface/visit-event'
 import {
+  autoHealthVisitEvent,
   fetchVisitEvent,
   fetchVisitEventTasks,
   syncVisitEvent,
@@ -79,6 +84,15 @@ export const useSyncVisitEvent = (
 ) => {
   return useMutation({
     mutationFn: (kodebooking: string) => syncVisitEvent(kodebooking),
+    ...options,
+  })
+}
+
+export const useAutoHealthVisitEvent = (
+  options?: UseMutationOptions<AutoHealthVisitEvent, Error, string>,
+) => {
+  return useMutation({
+    mutationFn: (kodebooking: string) => autoHealthVisitEvent(kodebooking),
     ...options,
   })
 }

@@ -67,3 +67,31 @@ export type VisitEventLog = {
   createdAt: string
   updatedAt: string
 }
+
+export type AutoHealthVisitEvent = {
+  success: boolean
+  data: {
+    patientRegistrationUpdated: {
+      no_reg: string
+      no_rawat: string
+      tgl_registrasi: string
+      nama_hari: string
+      jam_registrasi: string
+      kd_dokter: string
+      nama_dokter: string
+      no_rkm_medis: string
+      kd_poli: string
+      nama_poli: string
+      jenis_kunjungan: number
+      pasien_baru: string
+      jam_mulai: string
+      jam_selesai: string
+      kuota_jkn: number
+      task_id_3: string
+      task_id_4: string
+      task_id_5: string
+      task_id_6: string
+      task_id_7: string
+    }
+  }
+}

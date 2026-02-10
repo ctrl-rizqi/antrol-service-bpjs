@@ -15,6 +15,7 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DemoTableRouteImport } from './routes/demo/table'
 import { Route as DashboardVisitEventIndexRouteImport } from './routes/dashboard/visit-event/index'
+import { Route as DashboardTaskIdIndexRouteImport } from './routes/dashboard/task-id/index'
 import { Route as DashboardPoliExceptionIndexRouteImport } from './routes/dashboard/poli-exception/index'
 import { Route as DemoFormSimpleRouteImport } from './routes/demo/form.simple'
 import { Route as DemoFormAddressRouteImport } from './routes/demo/form.address'
@@ -51,6 +52,11 @@ const DashboardVisitEventIndexRoute =
     path: '/visit-event/',
     getParentRoute: () => DashboardRouteRoute,
   } as any)
+const DashboardTaskIdIndexRoute = DashboardTaskIdIndexRouteImport.update({
+  id: '/task-id/',
+  path: '/task-id/',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
 const DashboardPoliExceptionIndexRoute =
   DashboardPoliExceptionIndexRouteImport.update({
     id: '/poli-exception/',
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/dashboard/poli-exception/': typeof DashboardPoliExceptionIndexRoute
+  '/dashboard/task-id/': typeof DashboardTaskIdIndexRoute
   '/dashboard/visit-event/': typeof DashboardVisitEventIndexRoute
   '/dashboard/visit-event/view/$id': typeof DashboardVisitEventViewIdRoute
 }
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/dashboard/poli-exception': typeof DashboardPoliExceptionIndexRoute
+  '/dashboard/task-id': typeof DashboardTaskIdIndexRoute
   '/dashboard/visit-event': typeof DashboardVisitEventIndexRoute
   '/dashboard/visit-event/view/$id': typeof DashboardVisitEventViewIdRoute
 }
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/dashboard/poli-exception/': typeof DashboardPoliExceptionIndexRoute
+  '/dashboard/task-id/': typeof DashboardTaskIdIndexRoute
   '/dashboard/visit-event/': typeof DashboardVisitEventIndexRoute
   '/dashboard/visit-event/view/$id': typeof DashboardVisitEventViewIdRoute
 }
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/demo/form/address'
     | '/demo/form/simple'
     | '/dashboard/poli-exception/'
+    | '/dashboard/task-id/'
     | '/dashboard/visit-event/'
     | '/dashboard/visit-event/view/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/demo/form/address'
     | '/demo/form/simple'
     | '/dashboard/poli-exception'
+    | '/dashboard/task-id'
     | '/dashboard/visit-event'
     | '/dashboard/visit-event/view/$id'
   id:
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/demo/form/address'
     | '/demo/form/simple'
     | '/dashboard/poli-exception/'
+    | '/dashboard/task-id/'
     | '/dashboard/visit-event/'
     | '/dashboard/visit-event/view/$id'
   fileRoutesById: FileRoutesById
@@ -201,6 +213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardVisitEventIndexRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/dashboard/task-id/': {
+      id: '/dashboard/task-id/'
+      path: '/task-id'
+      fullPath: '/dashboard/task-id/'
+      preLoaderRoute: typeof DashboardTaskIdIndexRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
     '/dashboard/poli-exception/': {
       id: '/dashboard/poli-exception/'
       path: '/poli-exception'
@@ -235,6 +254,7 @@ declare module '@tanstack/react-router' {
 interface DashboardRouteRouteChildren {
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardPoliExceptionIndexRoute: typeof DashboardPoliExceptionIndexRoute
+  DashboardTaskIdIndexRoute: typeof DashboardTaskIdIndexRoute
   DashboardVisitEventIndexRoute: typeof DashboardVisitEventIndexRoute
   DashboardVisitEventViewIdRoute: typeof DashboardVisitEventViewIdRoute
 }
@@ -242,6 +262,7 @@ interface DashboardRouteRouteChildren {
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardPoliExceptionIndexRoute: DashboardPoliExceptionIndexRoute,
+  DashboardTaskIdIndexRoute: DashboardTaskIdIndexRoute,
   DashboardVisitEventIndexRoute: DashboardVisitEventIndexRoute,
   DashboardVisitEventViewIdRoute: DashboardVisitEventViewIdRoute,
 }

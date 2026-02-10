@@ -20,6 +20,7 @@ import Refresh from './refresh'
 import Resend from './resend'
 import PayloadTimeline from './payload-timeline'
 import Syncron from './syncron'
+import { VisitEventAutoHealth } from './autohealth'
 
 export type VisitEventWithTasks = VisitEvent & {
   EventTasks: EventTask[]
@@ -131,6 +132,9 @@ export const columns: ColumnDef<VisitEventWithTasks, unknown>[] = [
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuGroup>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <VisitEventAutoHealth visit_id={row.original.visit_id} />
+                  </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Syncron visit_id={row.original.visit_id} />
                   </DropdownMenuItem>

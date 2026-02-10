@@ -53,6 +53,11 @@ const data = {
       icon: Frame,
     },
     {
+      name: 'Daftar Registrasi',
+      url: '/dashboard/task-id',
+      icon: PieChart,
+    },
+    {
       name: 'Daftar Antrol',
       url: '/dashboard/visit-event',
       icon: PieChart,

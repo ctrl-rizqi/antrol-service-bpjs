@@ -50,7 +50,7 @@ export default function Refresh({ visit_id }: { visit_id: string }) {
       <Button
         variant="ghost"
         size="sm"
-        className="justify-start p-0!"
+        className="justify-start p-0! w-full"
         onClick={handleValidate}
         disabled={isValidatePending}
       >
