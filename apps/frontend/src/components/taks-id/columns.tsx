@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TaskIdRegistration } from '@/interface/visit-event'
-import { Button } from '../ui/button'
+
 import { Sync } from './Sync'
 
 export const columns: ColumnDef<TaskIdRegistration, unknown>[] = [

@@ -10,7 +10,6 @@ import {
   useQuery,
   type UseMutationOptions,
 } from '@tanstack/react-query'
-import type { EventTask, VisitEvent } from '@/interface/visit-event'
 
 export const useTaskId = (
   search: string,
