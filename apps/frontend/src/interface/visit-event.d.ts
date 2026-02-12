@@ -95,3 +95,39 @@ export type AutoHealthVisitEvent = {
     }
   }
 }
+
+export type TaskIdRegistration = {
+  id: string
+  visit_id: string
+  event_time: string
+  event_time_datetime: string
+  no_rkm_medis: string
+  sumber_data: string
+  tanggal: string
+  kodedokter: number
+  kodepoli: string
+  status_peserta: boolean
+  status_kunjungan: boolean
+  payload: {
+    nik: string
+    nohp: string
+    status: string
+    nokapst: string
+    tanggal: string
+    kodepoli: string
+    ispeserta: boolean
+    noantrean: string
+    jampraktek: string
+    kodedokter: number
+    sumberdata: string
+    createdtime: number
+    kodebooking: string
+    norekammedis: string
+    jeniskunjungan: number
+    nomorreferensi: string
+    estimasidilayani: number
+  }
+  fetchedAt: string
+  createdAt: string
+  updatedAt: string
+}

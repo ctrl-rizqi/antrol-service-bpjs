@@ -2,8 +2,11 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { paginate } from "../utils/pagination";
-import { getPendaftaranAntreanByTanggal } from "../bpjs/bpjs.client";
-import { formatToYYYYMMDD } from "../utils/formatDate";
+import {
+  getPendaftaranAntreanByTanggal,
+  getListTaskByKodebooking,
+} from "../bpjs/bpjs.client";
+import { formatToYYYYMMDD, parseBPJSDateTime } from "../utils/formatDate";
 import { fetchRegistrationByNoReg, insertTaskId } from "../khanza/khanza.query";
 import { generateTaskTime } from "../utils/generateTime";
 
@@ -35,7 +38,7 @@ router.get("/", async (req: Request, res: Response) => {
     // kirim response
     return res.json({
       success: true,
-      data: snapshot,
+      ...snapshot,
     });
   } catch (error) {
     return res.status(500).json({
@@ -152,11 +155,76 @@ router.post("/autorepair", async (req: Request, res: Response) => {
       parseInt(seconds),
     );
 
-    task_id_3 = generateTaskTime(visit_id, registrationDateTime, 10, 20); // dari waktu registrasi
-    task_id_4 = generateTaskTime(visit_id, task_id_3, 30, 40); // dari waktu task_id_3
-    task_id_5 = generateTaskTime(visit_id, task_id_4, 3, 8); // dari waktu task_id_4
-    task_id_6 = generateTaskTime(visit_id, task_id_5, 3, 6); // dari waktu task_id_5
-    task_id_7 = generateTaskTime(visit_id, task_id_6, 3, 6); // dari waktu task_id_6
+    let pendaftaranAntrean: any[] = [];
+
+    try {
+      pendaftaranAntrean = await getListTaskByKodebooking(visit_id);
+
+      // validasi response
+      if (!Array.isArray(pendaftaranAntrean)) {
+        console.warn("Response BPJS bukan array");
+        pendaftaranAntrean = [];
+      }
+    } catch (error) {
+      pendaftaranAntrean = [];
+    }
+
+    // Helper untuk mendapatkan waktu dari BPJS atau generate
+    // Helper untuk mendapatkan waktu dari BPJS atau generate
+    const getTaskTime = (
+      taskId: number,
+      baseTime: Date,
+      minDelay: number,
+      maxDelay: number,
+    ): Date => {
+      try {
+        const bpjsTask = pendaftaranAntrean.find((p) => p?.taskid === taskId);
+
+        // Pengecekan lengkap
+        if (
+          bpjsTask &&
+          typeof bpjsTask.wakturs === "string" &&
+          bpjsTask.wakturs.trim().length > 0
+        ) {
+          const parsedDate = parseBPJSDateTime(bpjsTask.wakturs);
+
+          if (parsedDate) {
+            console.log(
+              `Task ${taskId} menggunakan waktu dari BPJS:`,
+              parsedDate,
+            );
+            return parsedDate;
+          } else {
+            console.warn(
+              `Task ${taskId} format waktu BPJS invalid:`,
+              bpjsTask.wakturs,
+            );
+          }
+        } else {
+          console.log(
+            `Task ${taskId} tidak ditemukan di BPJS atau wakturs kosong`,
+          );
+        }
+      } catch (error) {
+        console.error(`Error processing task ${taskId} from BPJS:`, error);
+      }
+
+      // Fallback: generate otomatis
+      const generatedDate = generateTaskTime(
+        visit_id,
+        baseTime,
+        minDelay,
+        maxDelay,
+      );
+      console.log(`Task ${taskId} di-generate:`, generatedDate);
+      return generatedDate;
+    };
+
+    task_id_3 = getTaskTime(3, registrationDateTime, 10, 20); // dari waktu registrasi
+    task_id_4 = getTaskTime(4, task_id_3, 30, 40); // dari waktu task_id_3
+    task_id_5 = getTaskTime(5, task_id_4, 3, 8); // dari waktu task_id_4
+    task_id_6 = getTaskTime(6, task_id_5, 3, 6); // dari waktu task_id_5
+    task_id_7 = getTaskTime(7, task_id_6, 3, 6); // dari waktu task_id_6
 
     // update data khanza
     await insertTaskId(
@@ -175,12 +243,13 @@ router.post("/autorepair", async (req: Request, res: Response) => {
       success: true,
       data: {
         patientRegistrationUpdated,
+        pendaftaranAntrean,
       },
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Gagal mengambil data task_id_4",
+      message: "Gagal mengambil data pendaftaran antrean",
       error: (error as Error).message,
     });
   }

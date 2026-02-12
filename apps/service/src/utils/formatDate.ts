@@ -96,3 +96,54 @@ export function formatToYYYYMMDD(date: Date | string): string {
   const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+export function parseBPJSDateTime(bpjsDateTime: string): Date | null {
+  try {
+    // Format: "06-02-2026 16:30:35 WIB"
+    // Hapus " WIB" di akhir
+    const cleanDateTime = bpjsDateTime.replace(" WIB", "").trim();
+
+    // Validasi format dasar
+    if (!cleanDateTime || cleanDateTime.length < 19) {
+      return null;
+    }
+
+    // Split tanggal dan waktu
+    const [datePart, timePart] = cleanDateTime.split(" ");
+
+    if (!datePart || !timePart) {
+      return null;
+    }
+
+    // Parse tanggal (DD-MM-YYYY)
+    const [day, month, year] = datePart.split("-");
+
+    // Parse waktu (HH:mm:ss)
+    const [hours, minutes, seconds] = timePart.split(":");
+
+    // Validasi komponen
+    if (!day || !month || !year || !hours || !minutes || !seconds) {
+      return null;
+    }
+
+    // Buat Date object (month di JS dimulai dari 0)
+    const date = new Date(
+      parseInt(year),
+      parseInt(month) - 1,
+      parseInt(day),
+      parseInt(hours),
+      parseInt(minutes),
+      parseInt(seconds),
+    );
+
+    // Validasi apakah Date valid
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+
+    return date;
+  } catch (error) {
+    console.error("Error parsing BPJS datetime:", error);
+    return null;
+  }
+}

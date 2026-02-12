@@ -54,7 +54,15 @@ export async function getJadwalDokter(kodePoli: string, tanggal: string) {
   return response.data;
 }
 
-export async function getListTaskByKodebooking(kodebooking: string) {
+export async function getListTaskByKodebooking(kodebooking: string): Promise<
+  {
+    wakturs: string;
+    waktu: string;
+    taskname: string;
+    taskid: number;
+    kodebooking: string;
+  }[]
+> {
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const signature = generateSignature(CONST_ID, SECRET_KEY, timestamp);
 
@@ -80,7 +88,18 @@ export async function getListTaskByKodebooking(kodebooking: string) {
     return JSON.parse(decrypted);
   }
 
-  return response.data;
+  // cek apakah response array apa tidak
+  if (!Array.isArray(response.data)) {
+    return [];
+  }
+
+  return response.data as {
+    wakturs: string;
+    waktu: string;
+    taskname: string;
+    taskid: number;
+    kodebooking: string;
+  }[];
 }
 
 /**
@@ -119,36 +138,6 @@ export async function getAllPoliInfo(): Promise<
     kodepoli: string;
     namapoli: string;
   }[];
-}
-
-/**
- * Dekripsi response BPJS menggunakan AES-256-CBC + LZString decompression
- */
-function decryptBpjsResponse(encryptedData: string, ts: string): string {
-  // 1. Generate Key & IV (SHA256 dari ConsID + SecretKey + Timestamp)
-  const key = crypto
-    .createHash("sha256")
-    .update(CONST_ID + SECRET_KEY + ts)
-    .digest();
-
-  // IV adalah 16 byte pertama dari key
-  const iv = key.slice(0, 16);
-
-  // 2. Dekripsi AES-256-CBC
-  const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
-
-  let decrypted = decipher.update(encryptedData, "base64", "utf8");
-  decrypted += decipher.final("utf8");
-
-  // 3. Decompress LZString
-  // BPJS menggunakan decompressFromEncodedURIComponent
-  const decompressed = LZString.decompressFromEncodedURIComponent(decrypted);
-
-  if (!decompressed) {
-    throw new Error("Gagal decompress response BPJS");
-  }
-
-  return decompressed;
 }
 
 /**
@@ -222,4 +211,34 @@ export async function getPendaftaranAntreanByTanggal(tanggal: string): Promise<
     ispeserta: boolean;
     status: "Belum dilayani" | "Selesai dilayani";
   }[];
+}
+
+/**
+ * Dekripsi response BPJS menggunakan AES-256-CBC + LZString decompression
+ */
+function decryptBpjsResponse(encryptedData: string, ts: string): string {
+  // 1. Generate Key & IV (SHA256 dari ConsID + SecretKey + Timestamp)
+  const key = crypto
+    .createHash("sha256")
+    .update(CONST_ID + SECRET_KEY + ts)
+    .digest();
+
+  // IV adalah 16 byte pertama dari key
+  const iv = key.slice(0, 16);
+
+  // 2. Dekripsi AES-256-CBC
+  const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
+
+  let decrypted = decipher.update(encryptedData, "base64", "utf8");
+  decrypted += decipher.final("utf8");
+
+  // 3. Decompress LZString
+  // BPJS menggunakan decompressFromEncodedURIComponent
+  const decompressed = LZString.decompressFromEncodedURIComponent(decrypted);
+
+  if (!decompressed) {
+    throw new Error("Gagal decompress response BPJS");
+  }
+
+  return decompressed;
 }
