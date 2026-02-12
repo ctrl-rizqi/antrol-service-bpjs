@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import {
   fetchTaskIdRegistration,
   syncTaskIdRegistration,
+  syncVisitEvent,
+  type syncVisitEventResponse,
 } from '@/services/task-id'
 import {
   useMutation,
   useQuery,
   type UseMutationOptions,
 } from '@tanstack/react-query'
+import type { EventTask, VisitEvent } from '@/interface/visit-event'
 
 export const useTaskId = (
   search: string,
@@ -42,6 +45,24 @@ export const useSyncTaskId = (
   return useMutation({
     mutationFn: async (tanggal: string) => {
       const result = await syncTaskIdRegistration(tanggal)
+      return { data: result }
+    },
+    ...options,
+  })
+}
+
+export const useSyncVisitEvent = (
+  options?: UseMutationOptions<
+    {
+      data: syncVisitEventResponse
+    },
+    Error,
+    string
+  >,
+) => {
+  return useMutation({
+    mutationFn: async (kodebooking: string) => {
+      const result = await syncVisitEvent(kodebooking)
       return { data: result }
     },
     ...options,

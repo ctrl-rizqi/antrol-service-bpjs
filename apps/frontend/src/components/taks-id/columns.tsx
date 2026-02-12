@@ -1,7 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TaskIdRegistration } from '@/interface/visit-event'
+import { Button } from '../ui/button'
+import { Sync } from './Sync'
 
-export const columns: ColumnDef<TaskIdRegistration>[] = [
+export const columns: ColumnDef<TaskIdRegistration, unknown>[] = [
   {
     accessorKey: 'visit_id',
     header: 'Kode Booking',
@@ -35,5 +37,16 @@ export const columns: ColumnDef<TaskIdRegistration>[] = [
   {
     accessorKey: 'kodedokter',
     header: 'Kode Dokter',
+  },
+  {
+    header: 'Aksi',
+
+    cell: ({ row }) => {
+      return (
+        <div>
+          <Sync visit_id={row.original.visit_id} />
+        </div>
+      )
+    },
   },
 ]

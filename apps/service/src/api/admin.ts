@@ -144,6 +144,56 @@ router.post("/visit-event/revalidate", async (req: Request, res: Response) => {
   }
 });
 
+// Mengambil data manual berdasarkan visit_id / kodebooking
+router.post("/visit-event/manual", async (req: Request, res: Response) => {
+  const { kodebooking: noRawat } = req.body || {};
+
+  if (typeof noRawat !== "string") {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid registration number format.",
+    });
+  }
+
+  try {
+    // 1. Fetch data from Khanza using no_reg
+    const khanzaRow = await fetchRegistrationByNoReg(noRawat);
+    if (!khanzaRow) {
+      return res.status(404).json({
+        success: false,
+        message: `Registration with no_reg ${noRawat} not found in Khanza.`,
+      });
+    }
+
+    // 2. Process the row
+    console.log(`[MANUAL] Processing row for visit_id: ${khanzaRow.no_rawat}`);
+    const taskProgress = await checkTaskId(khanzaRow);
+    await processRegistrationRow(khanzaRow, taskProgress);
+
+    // 3. Fetch the created/updated event
+    const event = await prisma.visitEvent.findUnique({
+      where: { visit_id: khanzaRow.no_rawat },
+      include: { EventTasks: true },
+    });
+
+    res.json({
+      success: true,
+      message: `Successfully processed visit ${khanzaRow.no_rawat}.`,
+      data: event,
+    });
+  } catch (error) {
+    console.error(
+      `Failed to manual process visit_id for no_reg ${noRawat}:`,
+      error,
+    );
+    return res.status(500).json({
+      success: false,
+      message: `Failed to manual process visit_id for no_reg ${noRawat}`,
+      error: (error as Error).message,
+    });
+  }
+});
+
 // melihat status task berdasarkan id visitevent
 router.get("/visit-event/:id/tasks", async (req: Request, res: Response) => {
   const { id } = req.params;
