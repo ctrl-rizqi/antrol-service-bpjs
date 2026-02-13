@@ -40,9 +40,12 @@ export type syncVisitEventResponse = {
 }
 
 export const syncVisitEvent = async (kodebooking: string) => {
-  const response = await api.post<syncVisitEventResponse>('/task-id/manual', {
-    kodebooking,
-  })
+  const response = await api.post<syncVisitEventResponse>(
+    '/visit-event/manual',
+    {
+      kodebooking,
+    },
+  )
 
   return response.data
 }
