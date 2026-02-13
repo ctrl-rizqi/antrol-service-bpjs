@@ -1,8 +1,13 @@
 import "dotenv/config";
-import express, { Application, Request, Response } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import prisma from "./lib/prisma";
 import { khanzaDb } from "./khanza/khanza.client";
+import {
+  authenticateToken,
+  requirePermission,
+  AuthRequest,
+} from "./middleware/auth";
 // dotenv
 
 process.env.TZ = "Asia/Jakarta";
@@ -13,6 +18,7 @@ import adminRouter from "./api/admin";
 import poliRouter from "./api/poli";
 import categoryRouter from "./api/category";
 import taskId from "./api/task-id";
+import authRouter from "./api/auth";
 
 // Scheduler JOB
 import { startPollerScheduler } from "./job/poller.scheduler";
@@ -65,10 +71,73 @@ async function checkDatabaseSIMRS() {
     res.send("Hello, World!");
   });
 
-  app.use("/api/admin", adminRouter);
-  app.use("/api/poli", poliRouter);
-  app.use("/api/category", categoryRouter);
-  app.use("/api/task-id", taskId);
+  app.use("/api/auth", authRouter);
+
+  const routePermissionMap: Record<string, string> = {
+    "/api/admin": "admin:access",
+    "/api/poli": "poli:access",
+    "/api/category": "category:access",
+    "/api/task-id": "task-id:access",
+  };
+
+  const protectRoute = (path: string) => {
+    return (req: Request, res: Response, next: NextFunction) => {
+      const authReq = req as AuthRequest;
+      const user = authReq.user;
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required",
+        });
+      }
+
+      if (user.role === "admin") {
+        return next();
+      }
+
+      const permission = routePermissionMap[path];
+      const permissions = user.permissions || [];
+
+      if (
+        permission &&
+        !permissions.includes(permission) &&
+        !permissions.includes("*")
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: `Access denied. Required permission: ${permission}`,
+        });
+      }
+
+      next();
+    };
+  };
+
+  app.use(
+    "/api/admin",
+    authenticateToken,
+    protectRoute("/api/admin"),
+    adminRouter,
+  );
+  app.use(
+    "/api/poli",
+    authenticateToken,
+    protectRoute("/api/poli"),
+    poliRouter,
+  );
+  app.use(
+    "/api/category",
+    authenticateToken,
+    protectRoute("/api/category"),
+    categoryRouter,
+  );
+  app.use(
+    "/api/task-id",
+    authenticateToken,
+    protectRoute("/api/task-id"),
+    taskId,
+  );
 
   process.on("uncaughtException", async (err) => {
     await prisma.$disconnect();

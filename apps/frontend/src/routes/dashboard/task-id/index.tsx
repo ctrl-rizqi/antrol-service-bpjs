@@ -4,7 +4,7 @@ import { columns } from '@/components/taks-id/columns'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSyncTaskId, useTaskId } from '@/hooks/task-id'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { format } from 'date-fns'
 import {
@@ -30,6 +30,19 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/dashboard/task-id/')({
+  beforeLoad: () => {
+    const userStr = localStorage.getItem('auth_user')
+    if (!userStr) {
+      throw redirect({ to: '/login' })
+    }
+    const user = JSON.parse(userStr)
+    const hasPermission = user.role === 'admin' || 
+      user.permissions?.includes('task-id:access') || 
+      user.permissions?.includes('*')
+    if (!hasPermission) {
+      throw redirect({ to: '/dashboard' })
+    }
+  },
   component: RouteComponent,
 })
 

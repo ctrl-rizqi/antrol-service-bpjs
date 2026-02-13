@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { Frame, HeartIcon, PieChart } from 'lucide-react'
+import { Frame, HeartIcon, PieChart, Users } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
 
 import { NavProjects } from '@/components/nav-projects'
 import { NavUser } from '@/components/nav-user'
@@ -13,75 +14,82 @@ import {
   SidebarHeader,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import { useAuth } from '@/hooks/use-auth'
 
-// This is sample data.
-const data = {
-  user: {
-    name: 'admin',
-    email: 'm@example.com',
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user, isAdmin, logout, hasPermission } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate({ to: '/login' })
+  }
+
+  const userData = {
+    name: user?.name || 'User',
+    email: user?.username || '',
     avatar: '/avatars/shadcn.jpg',
-  },
-  teams: [
+    role: user?.role || 'user',
+  }
+
+  const teams = [
     {
       name: 'RS Prasetya Husada',
       logo: HeartIcon,
       plan: 'Enterprise',
     },
-  ],
-  // navMain: [
-  //   {
-  //     title: 'Main',
-  //     url: '#',
-  //     icon: SquareTerminal,
-  //     isActive: false,
-  //     items: [
-  //       {
-  //         title: 'Dashboard',
-  //         url: '/dashboard',
-  //       },
-  //       {
-  //         title: 'Daftar Antrol',
-  //         url: '/dashboard/visit-event',
-  //       },
-  //     ],
-  //   },
-  // ],
-  projects: [
+  ]
+
+  const projects = [
     {
       name: 'Dashboard',
       url: '/dashboard',
       icon: Frame,
     },
-    {
+  ]
+
+  if (hasPermission('task-id:access') || isAdmin) {
+    projects.push({
       name: 'Daftar Registrasi',
       url: '/dashboard/task-id',
       icon: PieChart,
-    },
-    {
+    })
+  }
+
+  if (hasPermission('poli:access') || isAdmin) {
+    projects.push({
       name: 'Daftar Antrol',
       url: '/dashboard/visit-event',
       icon: PieChart,
-    },
-    {
+    })
+  }
+
+  if (hasPermission('category:access') || isAdmin) {
+    projects.push({
       name: 'Daftar Pengecualian Poli',
       url: '/dashboard/poli-exception/',
       icon: PieChart,
-    },
-  ],
-}
+    })
+  }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  if (isAdmin) {
+    projects.push({
+      name: 'Kelola User',
+      url: '/dashboard/users',
+      icon: Users,
+    })
+  }
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={teams} />
       </SidebarHeader>
       <SidebarContent>
-        {/* <NavMain items={data.navMain} /> */}
-        <NavProjects projects={data.projects} />
+        <NavProjects projects={projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={userData} onLogout={handleLogout} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

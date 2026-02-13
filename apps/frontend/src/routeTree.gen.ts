@@ -9,18 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DemoTableRouteImport } from './routes/demo/table'
 import { Route as DashboardVisitEventIndexRouteImport } from './routes/dashboard/visit-event/index'
+import { Route as DashboardUsersIndexRouteImport } from './routes/dashboard/users/index'
 import { Route as DashboardTaskIdIndexRouteImport } from './routes/dashboard/task-id/index'
 import { Route as DashboardPoliExceptionIndexRouteImport } from './routes/dashboard/poli-exception/index'
 import { Route as DemoFormSimpleRouteImport } from './routes/demo/form.simple'
 import { Route as DemoFormAddressRouteImport } from './routes/demo/form.address'
 import { Route as DashboardVisitEventViewIdRouteImport } from './routes/dashboard/visit-event/view/$id'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -52,6 +59,11 @@ const DashboardVisitEventIndexRoute =
     path: '/visit-event/',
     getParentRoute: () => DashboardRouteRoute,
   } as any)
+const DashboardUsersIndexRoute = DashboardUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
 const DashboardTaskIdIndexRoute = DashboardTaskIdIndexRouteImport.update({
   id: '/task-id/',
   path: '/task-id/',
@@ -83,6 +95,7 @@ const DashboardVisitEventViewIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteRouteWithChildren
+  '/login': typeof LoginRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -90,11 +103,13 @@ export interface FileRoutesByFullPath {
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/dashboard/poli-exception/': typeof DashboardPoliExceptionIndexRoute
   '/dashboard/task-id/': typeof DashboardTaskIdIndexRoute
+  '/dashboard/users/': typeof DashboardUsersIndexRoute
   '/dashboard/visit-event/': typeof DashboardVisitEventIndexRoute
   '/dashboard/visit-event/view/$id': typeof DashboardVisitEventViewIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/dashboard': typeof DashboardIndexRoute
@@ -102,6 +117,7 @@ export interface FileRoutesByTo {
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/dashboard/poli-exception': typeof DashboardPoliExceptionIndexRoute
   '/dashboard/task-id': typeof DashboardTaskIdIndexRoute
+  '/dashboard/users': typeof DashboardUsersIndexRoute
   '/dashboard/visit-event': typeof DashboardVisitEventIndexRoute
   '/dashboard/visit-event/view/$id': typeof DashboardVisitEventViewIdRoute
 }
@@ -109,6 +125,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteRouteWithChildren
+  '/login': typeof LoginRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -116,6 +133,7 @@ export interface FileRoutesById {
   '/demo/form/simple': typeof DemoFormSimpleRoute
   '/dashboard/poli-exception/': typeof DashboardPoliExceptionIndexRoute
   '/dashboard/task-id/': typeof DashboardTaskIdIndexRoute
+  '/dashboard/users/': typeof DashboardUsersIndexRoute
   '/dashboard/visit-event/': typeof DashboardVisitEventIndexRoute
   '/dashboard/visit-event/view/$id': typeof DashboardVisitEventViewIdRoute
 }
@@ -124,6 +142,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/login'
     | '/demo/table'
     | '/demo/tanstack-query'
     | '/dashboard/'
@@ -131,11 +150,13 @@ export interface FileRouteTypes {
     | '/demo/form/simple'
     | '/dashboard/poli-exception/'
     | '/dashboard/task-id/'
+    | '/dashboard/users/'
     | '/dashboard/visit-event/'
     | '/dashboard/visit-event/view/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/demo/table'
     | '/demo/tanstack-query'
     | '/dashboard'
@@ -143,12 +164,14 @@ export interface FileRouteTypes {
     | '/demo/form/simple'
     | '/dashboard/poli-exception'
     | '/dashboard/task-id'
+    | '/dashboard/users'
     | '/dashboard/visit-event'
     | '/dashboard/visit-event/view/$id'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/login'
     | '/demo/table'
     | '/demo/tanstack-query'
     | '/dashboard/'
@@ -156,6 +179,7 @@ export interface FileRouteTypes {
     | '/demo/form/simple'
     | '/dashboard/poli-exception/'
     | '/dashboard/task-id/'
+    | '/dashboard/users/'
     | '/dashboard/visit-event/'
     | '/dashboard/visit-event/view/$id'
   fileRoutesById: FileRoutesById
@@ -163,6 +187,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
+  LoginRoute: typeof LoginRoute
   DemoTableRoute: typeof DemoTableRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   DemoFormAddressRoute: typeof DemoFormAddressRoute
@@ -171,6 +196,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -211,6 +243,13 @@ declare module '@tanstack/react-router' {
       path: '/visit-event'
       fullPath: '/dashboard/visit-event/'
       preLoaderRoute: typeof DashboardVisitEventIndexRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/users/': {
+      id: '/dashboard/users/'
+      path: '/users'
+      fullPath: '/dashboard/users/'
+      preLoaderRoute: typeof DashboardUsersIndexRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
     '/dashboard/task-id/': {
@@ -255,6 +294,7 @@ interface DashboardRouteRouteChildren {
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardPoliExceptionIndexRoute: typeof DashboardPoliExceptionIndexRoute
   DashboardTaskIdIndexRoute: typeof DashboardTaskIdIndexRoute
+  DashboardUsersIndexRoute: typeof DashboardUsersIndexRoute
   DashboardVisitEventIndexRoute: typeof DashboardVisitEventIndexRoute
   DashboardVisitEventViewIdRoute: typeof DashboardVisitEventViewIdRoute
 }
@@ -263,6 +303,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardPoliExceptionIndexRoute: DashboardPoliExceptionIndexRoute,
   DashboardTaskIdIndexRoute: DashboardTaskIdIndexRoute,
+  DashboardUsersIndexRoute: DashboardUsersIndexRoute,
   DashboardVisitEventIndexRoute: DashboardVisitEventIndexRoute,
   DashboardVisitEventViewIdRoute: DashboardVisitEventViewIdRoute,
 }
@@ -274,6 +315,7 @@ const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
+  LoginRoute: LoginRoute,
   DemoTableRoute: DemoTableRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   DemoFormAddressRoute: DemoFormAddressRoute,

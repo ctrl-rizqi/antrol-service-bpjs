@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import Header from '@/components/Header'
 import { DataTable } from '@/components/data-table'
 import {
@@ -33,6 +33,21 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export const Route = createFileRoute('/dashboard/visit-event/')({
+  beforeLoad: () => {
+    const userStr = localStorage.getItem('auth_user')
+    if (!userStr) {
+      throw redirect({ to: '/login' })
+      return
+    }
+    const user = JSON.parse(userStr)
+    const hasPermission =
+      user.role === 'admin' ||
+      user.permissions?.includes('poli:access') ||
+      user.permissions?.includes('*')
+    if (!hasPermission) {
+      throw redirect({ to: '/dashboard' })
+    }
+  },
   component: RouteComponent,
 })
 

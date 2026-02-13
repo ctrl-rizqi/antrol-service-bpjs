@@ -6,7 +6,7 @@ import {
   useValidateVisitEvent,
   useVisitEventTasks,
 } from '@/hooks/visit-event'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -20,6 +20,19 @@ import {
 } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard/visit-event/view/$id')({
+  beforeLoad: () => {
+    const userStr = localStorage.getItem('auth_user')
+    if (!userStr) {
+      throw redirect({ to: '/login' })
+    }
+    const user = JSON.parse(userStr)
+    const hasPermission = user.role === 'admin' || 
+      user.permissions?.includes('poli:access') || 
+      user.permissions?.includes('*')
+    if (!hasPermission) {
+      throw redirect({ to: '/dashboard' })
+    }
+  },
   component: RouteComponent,
 })
 

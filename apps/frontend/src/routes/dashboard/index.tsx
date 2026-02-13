@@ -1,7 +1,13 @@
 import Header from '@/components/Header'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/dashboard/')({
+  beforeLoad: () => {
+    const userStr = localStorage.getItem('auth_user')
+    if (!userStr) {
+      throw redirect({ to: '/login' })
+    }
+  },
   component: DashboardIndex,
 })
 

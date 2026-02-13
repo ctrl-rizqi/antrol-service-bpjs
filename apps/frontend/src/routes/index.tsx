@@ -1,6 +1,12 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({
+  beforeLoad: () => {
+    const isAuthenticated = localStorage.getItem('auth_token')
+    if (isAuthenticated) {
+      throw redirect({ to: '/dashboard' })
+    }
+  },
   component: App,
 })
 
@@ -13,7 +19,7 @@ function App() {
         </h1>
         <p className="text-lg text-muted-foreground">Aplikasi Antrean Online</p>
         <Link
-          to="/dashboard"
+          to="/login"
           className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
           Masuk ke Dashboard

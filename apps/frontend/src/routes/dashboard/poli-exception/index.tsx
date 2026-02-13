@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { DataTable } from '@/components/data-table'
 import Header from '@/components/Header'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { columns } from '@/components/poli-exception/columns'
 import {
   usePoli,
@@ -27,6 +27,19 @@ import {
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/dashboard/poli-exception/')({
+  beforeLoad: () => {
+    const userStr = localStorage.getItem('auth_user')
+    if (!userStr) {
+      throw redirect({ to: '/login' })
+    }
+    const user = JSON.parse(userStr)
+    const hasPermission = user.role === 'admin' || 
+      user.permissions?.includes('category:access') || 
+      user.permissions?.includes('*')
+    if (!hasPermission) {
+      throw redirect({ to: '/dashboard' })
+    }
+  },
   component: RouteComponent,
 })
 

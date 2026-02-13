@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE `User` ADD COLUMN `isActive` BOOLEAN NOT NULL DEFAULT true,
+    ADD COLUMN `permissions` JSON NOT NULL,
+    MODIFY `role` VARCHAR(50) NOT NULL DEFAULT 'user';
