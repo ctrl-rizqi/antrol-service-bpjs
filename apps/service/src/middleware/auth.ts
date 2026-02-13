@@ -17,7 +17,11 @@ export interface JwtPayload {
   permissions: string[];
 }
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+export const authenticateToken = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
@@ -29,7 +33,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
   }
 
   try {
-    const secret = process.env.JWT_SECRET;
+    const secret = process.env.JWT_SECRET || "your-secret-key";
     if (!secret) {
       throw new Error("JWT_SECRET not configured");
     }
@@ -62,8 +66,11 @@ export const requirePermission = (requiredPermission: string) => {
     }
 
     const permissions = user.permissions || [];
-    
-    if (!permissions.includes(requiredPermission) && !permissions.includes("*")) {
+
+    if (
+      !permissions.includes(requiredPermission) &&
+      !permissions.includes("*")
+    ) {
       return res.status(403).json({
         success: false,
         message: `Access denied. Required permission: ${requiredPermission}`,
