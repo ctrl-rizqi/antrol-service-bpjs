@@ -20,6 +20,6 @@ export const validateVisitEventPayload = ({ data }: { data: unknown }) => {
     return visitEventPayloadSchema.parse(data);
   } catch (error) {
     console.log("Validasi gagal: ", error);
-    throw new Error("Data tidak valid");
+    throw new Error("Data (payload visit event) tidak valid");
   }
 };

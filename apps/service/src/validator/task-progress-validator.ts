@@ -20,6 +20,6 @@ export const validateTaskProgress = (data: unknown) => {
     return taskProgressSchema.parse(data);
   } catch (error) {
     console.log("Validasi gagal: ", error);
-    throw new Error("Data tidak valid");
+    throw new Error("Data (payload progress task) tidak valid");
   }
 };

@@ -35,7 +35,7 @@ export const validateRegistrationPayload = ({ data }: { data: unknown }) => {
     return registrationPayloadSchema.parse(data);
   } catch (error) {
     console.log("Validasi gagal: ", error);
-    throw new Error("Data tidak valid");
+    throw new Error("Data (payload registrasi) tidak valid");
   }
 };
 
@@ -52,6 +52,6 @@ export const validateUpdateTaskPayload = ({ data }: { data: unknown }) => {
     return updateTaskPayloadSchema.parse(data);
   } catch (error) {
     console.log("Validasi gagal: ", error);
-    throw new Error("Data tidak valid");
+    throw new Error("Data (payload task_id) tidak valid");
   }
 };

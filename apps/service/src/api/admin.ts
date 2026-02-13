@@ -297,6 +297,8 @@ router.post("/visit-event/resend", async (req: Request, res: Response) => {
       if (currentTask.task_id === 0) {
         await processRegistrationTask(taskWithContext, true);
       } else if ([3, 4, 5, 6, 7].includes(currentTask.task_id)) {
+        console.log("Hei there, you have tasks");
+        console.log("Task ID:", JSON.stringify(taskWithContext));
         await processUpdateTask(taskWithContext, true);
       }
     }

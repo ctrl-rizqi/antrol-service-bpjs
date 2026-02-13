@@ -92,7 +92,7 @@ export async function processRegistrationTask(
 
     // simpan log pengiriman dan update status task
     // 200 = sukses, 208 = duplikasi (dianggap sebagai sukses)
-    const responseCode = response.data?.metadata?.code;
+    const responseCode = parseInt(String(response.data?.metadata?.code || "0"));
 
     if (responseCode === 200 || responseCode === 208) {
       await prisma.$transaction(async (tx) => {
@@ -143,6 +143,10 @@ export async function processUpdateTask(task: any, force: boolean = false) {
 
   // Validasi: Task sebelumnya harus sudah SEND
   if (!prevTask || prevTask.status !== "SEND") {
+    console.log(
+      `[SKIP] Task ${task.task_id} skipped because dependency ${requiredPrevId} is ${prevTask?.status ?? "MISSING"}`,
+    );
+
     // Jika task sebelumnya FAILED, maka task ini juga kita gagalkan agar tidak nyangkut selamanya
     if (prevTask?.status === "FAILED") {
       await prisma.eventTask.update({
@@ -172,7 +176,7 @@ export async function processUpdateTask(task: any, force: boolean = false) {
     }
   }
 
-  const dbDate = new Date(task.original_event_time);
+  const dbDate = new Date(task.original_event_time || task.event_time);
 
   // Ambil komponen waktu dari UTC (ini sebenarnya waktu WIB yang disimpan)
   const year = dbDate.getUTCFullYear();
@@ -200,7 +204,7 @@ export async function processUpdateTask(task: any, force: boolean = false) {
 
   try {
     const response = await sendToBpjs("/antrean/updatewaktu", payload);
-    const responseCode = response.data?.metadata?.code;
+    const responseCode = parseInt(String(response.data?.metadata?.code || "0"));
 
     if (responseCode === 200 || responseCode === 208) {
       await prisma.$transaction(async (tx) => {
