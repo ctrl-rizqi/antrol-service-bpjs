@@ -22,7 +22,7 @@ import authRouter from "./api/auth";
 
 // Scheduler JOB
 import { startPollerScheduler } from "./job/poller.scheduler";
-import { startQueuePoller } from "./job/queue.sheduler";
+// import { startQueuePoller } from "./job/queue.sheduler"; // Dimatikan - pengiriman manual via API
 
 // Tambahkan ini untuk mengatasi masalah serialisasi BigInt
 (BigInt.prototype as any).toJSON = function () {
@@ -55,10 +55,10 @@ async function checkDatabaseSIMRS() {
   await checkDatabaseConnection();
   await checkDatabaseSIMRS();
 
-  // Start Poller Scheduler
+  // Start Poller Scheduler (pull from Khanza to DB)
   startPollerScheduler();
-  // Start Queue Poller
-  startQueuePoller();
+  // Queue Poller dimatikan - pengiriman manual via API
+  // startQueuePoller();
 
   const app: Application = express();
   const PORT = process.env.PORT || 3000;
