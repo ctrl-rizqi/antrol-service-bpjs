@@ -22,7 +22,7 @@ import authRouter from "./api/auth";
 
 // Scheduler JOB
 import { startPollerScheduler } from "./job/poller.scheduler";
-// import { startQueuePoller } from "./job/queue.sheduler"; // Dimatikan - pengiriman manual via API
+import { startQueuePoller } from "./job/queue.sheduler";
 
 // Tambahkan ini untuk mengatasi masalah serialisasi BigInt
 (BigInt.prototype as any).toJSON = function () {
@@ -55,10 +55,19 @@ async function checkDatabaseSIMRS() {
   await checkDatabaseConnection();
   await checkDatabaseSIMRS();
 
-  // Start Poller Scheduler (pull from Khanza to DB)
+  // Start Poller Scheduler (pull from Khanza to DB) - selalu berjalan
   startPollerScheduler();
-  // Queue Poller dimatikan - pengiriman manual via API
-  // startQueuePoller();
+
+  // Queue Sender Toggle - berdasarkan environment variable
+  // true = pengiriman otomatis ke API BPJS (ON)
+  // false = pengiriman manual via API (OFF) - DEFAULT
+  const isQueueSenderEnabled = process.env.QUEUE_SENDER_ENABLED === "true";
+  if (isQueueSenderEnabled) {
+    startQueuePoller();
+    console.log("Queue Sender: AUTO (enabled)");
+  } else {
+    console.log("Queue Sender: MANUAL (disabled - gunakan API /api/admin/visit-event/resend)");
+  }
 
   const app: Application = express();
   const PORT = process.env.PORT || 3000;

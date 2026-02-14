@@ -6,7 +6,7 @@ import {
   type VisitEventWithTasks,
 } from '@/components/visit-event/columns'
 import { Input } from '@/components/ui/input'
-import { useVisitEvent } from '@/hooks/visit-event'
+import { useVisitEvent, useSyncBatchVisitEvent } from '@/hooks/visit-event'
 import {
   Pagination,
   PaginationContent,
@@ -15,6 +15,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Calendar } from '@/components/ui/calendar'
 import {
   Popover,
@@ -22,7 +23,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, RefreshCw } from 'lucide-react'
 import { type DateRange } from 'react-day-picker'
 import { format } from 'date-fns'
 import {
@@ -66,6 +67,25 @@ function RouteComponent() {
     date?.from ? format(date.from, 'yyyy-MM-dd') : undefined,
     date?.to ? format(date.to, 'yyyy-MM-dd') : undefined,
   )
+
+  const syncBatchMutation = useSyncBatchVisitEvent({
+    onSuccess: (data) => {
+      toast.success(`Sync batch selesai: ${data.summary.success}/${data.summary.total} berhasil`)
+    },
+    onError: (error) => {
+      toast.error(`Sync batch gagal: ${error.message}`)
+    },
+  })
+
+  const handleSyncBatch = () => {
+    if (!date?.from || !date?.to) {
+      toast.error('Pilih range tanggal terlebih dahulu')
+      return
+    }
+    const startDate = format(date.from, 'yyyy-MM-dd')
+    const endDate = format(date.to, 'yyyy-MM-dd')
+    syncBatchMutation.mutate({ startDate, endDate })
+  }
 
   return (
     <>
@@ -115,6 +135,17 @@ function RouteComponent() {
               />
             </PopoverContent>
           </Popover>
+
+          <Button
+            onClick={handleSyncBatch}
+            disabled={syncBatchMutation.isPending}
+            variant="outline"
+          >
+            <RefreshCw
+              className={`h-5 w-5 mr-2 ${syncBatchMutation.isPending ? 'animate-spin' : ''}`}
+            />
+            {syncBatchMutation.isPending ? 'Syncing...' : 'Sinkronasi Batch'}
+          </Button>
         </div>
         <DataTable
           columns={columns}

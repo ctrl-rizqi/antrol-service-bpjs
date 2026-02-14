@@ -41,6 +41,12 @@ export const syncVisitEvent = async (kodebooking: string) => {
   return response.data
 }
 
+export const syncBatchVisitEvent = async (startDate: string, endDate: string) => {
+  const response = await api.post(`/admin/visit-event/sync/batch`, { startDate, endDate })
+
+  return response.data
+}
+
 export const autoHealthVisitEvent = async (visit_id: string) => {
   const response = await api.post<AutoHealthVisitEvent>(`/task-id/autorepair`, { visit_id })
 

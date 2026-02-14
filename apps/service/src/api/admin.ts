@@ -493,6 +493,140 @@ router.post("/visit-event/sync", async (req: Request, res: Response) => {
   }
 });
 
+// Sync batch VisitEvent berdasarkan tanggal
+router.post("/visit-event/sync/batch", async (req: Request, res: Response) => {
+  const { startDate, endDate } = req.body || {};
+
+  if (!startDate || !endDate) {
+    return res.status(400).json({
+      success: false,
+      message: "startDate and endDate are required (format: YYYY-MM-DD).",
+    });
+  }
+
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T23:59:59.999Z`);
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid date format. Use YYYY-MM-DD.",
+    });
+  }
+
+  try {
+    // Ambil semua VisitEvent dalam rentang tanggal
+    const visitEvents = await prisma.visitEvent.findMany({
+      where: {
+        tanggal: {
+          gte: start,
+          lte: end,
+        },
+      },
+      select: {
+        visit_id: true,
+        id: true,
+      },
+    });
+
+    if (visitEvents.length === 0) {
+      return res.json({
+        success: true,
+        message: "No visit events found in the specified date range.",
+        data: [],
+        summary: { total: 0, success: 0, failed: 0 },
+      });
+    }
+
+    const results: {
+      visit_id: string;
+      status: "success" | "failed";
+      message: string;
+    }[] = [];
+
+    // Proses setiap VisitEvent
+    for (const event of visitEvents) {
+      try {
+        const response = await getListTaskByKodebooking(event.visit_id);
+
+        const noContentCheck = noContentResponseSchema.safeParse(response);
+
+        if (noContentCheck.success) {
+          results.push({
+            visit_id: event.visit_id,
+            status: "success",
+            message: "No tasks to sync (204 No Content)",
+          });
+          continue;
+        }
+
+        const validated = listTasksArraySchema.parse(response);
+        const syncTime = toFaceValueUTC(new Date());
+
+        // Simpan ke database
+        await prisma.$transaction(async (tx) => {
+          await tx.visitEvent.update({
+            where: { visit_id: event.visit_id },
+            data: { syncedAt: syncTime },
+          });
+
+          await tx.eventTask.deleteMany({
+            where: {
+              visit_event_id: event.id,
+              task_id: { not: 0 },
+            },
+          });
+
+          for (const task of validated) {
+            await tx.eventTask.create({
+              data: {
+                visit_id: task.kodebooking,
+                task_id: task.taskid,
+                status: "SEND",
+                event_time: parseWibDateString(task.wakturs),
+                visit_event_id: event.id,
+              },
+            });
+          }
+        });
+
+        results.push({
+          visit_id: event.visit_id,
+          status: "success",
+          message: `Synced ${validated.length} tasks`,
+        });
+      } catch (error) {
+        results.push({
+          visit_id: event.visit_id,
+          status: "failed",
+          message: (error as Error).message,
+        });
+      }
+    }
+
+    const successCount = results.filter((r) => r.status === "success").length;
+    const failedCount = results.filter((r) => r.status === "failed").length;
+
+    res.json({
+      success: true,
+      message: `Batch sync completed.`,
+      data: results,
+      summary: {
+        total: visitEvents.length,
+        success: successCount,
+        failed: failedCount,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to batch sync visit events:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to batch sync visit events",
+      error: (error as Error).message,
+    });
+  }
+});
+
 // Menambahkan flag/kategori pada visitEvent
 // Input: { kodebooking: }
 router.post("/visit-event/category", async (req: Request, res: Response) => {

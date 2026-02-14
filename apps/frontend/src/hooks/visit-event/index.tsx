@@ -9,6 +9,7 @@ import {
   fetchVisitEvent,
   fetchVisitEventTasks,
   syncVisitEvent,
+  syncBatchVisitEvent,
 } from '@/services/visit-event'
 import {
   useMutation,
@@ -93,6 +94,20 @@ export const useAutoHealthVisitEvent = (
 ) => {
   return useMutation({
     mutationFn: (kodebooking: string) => autoHealthVisitEvent(kodebooking),
+    ...options,
+  })
+}
+
+export const useSyncBatchVisitEvent = (
+  options?: UseMutationOptions<
+    { data: unknown; summary: { total: number; success: number; failed: number } },
+    Error,
+    { startDate: string; endDate: string }
+  >,
+) => {
+  return useMutation({
+    mutationFn: ({ startDate, endDate }: { startDate: string; endDate: string }) =>
+      syncBatchVisitEvent(startDate, endDate),
     ...options,
   })
 }
