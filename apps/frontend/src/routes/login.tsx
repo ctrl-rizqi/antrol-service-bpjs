@@ -1,11 +1,10 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { AlertCircle, Clock } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { SessionExpiredNotification } from '@/components/auth/session-expired-notification'
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
@@ -24,7 +23,7 @@ function LoginPage() {
     // Cek jika user datang dari redirect token expired
     const urlParams = new URLSearchParams(window.location.search)
     const expired = urlParams.get('expired')
-    
+
     if (expired === 'true') {
       setShowSessionExpired(true)
       // Hapus parameter dari URL
@@ -57,7 +56,9 @@ function LoginPage() {
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-lg">
         <div className="text-center">
           <h2 className="text-2xl font-bold">Sign In</h2>
-          <p className="mt-2 text-sm text-gray-600">Masukkan username dan password</p>
+          <p className="mt-2 text-sm text-gray-600">
+            Masukkan username dan password
+          </p>
         </div>
 
         {showSessionExpired && (
@@ -78,7 +79,10 @@ function LoginPage() {
           )}
 
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-gray-700"
+            >
               Username
             </label>
             <Input
@@ -94,7 +98,10 @@ function LoginPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
+            >
               Password
             </label>
             <Input

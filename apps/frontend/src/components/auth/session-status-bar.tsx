@@ -18,7 +18,6 @@ export function SessionStatusBar({ className = '' }: SessionStatusBarProps) {
   const { logout } = useAuth()
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [showDetails, setShowDetails] = useState(false)
 
   useEffect(() => {
     const checkTokenExpiry = () => {
@@ -103,13 +102,17 @@ export function SessionStatusBar({ className = '' }: SessionStatusBarProps) {
   const isExpiringSoon = timeRemaining <= 5 * 60 * 1000 // 5 minutes
 
   return (
-    <div className={`flex items-center space-x-2 bg-white rounded-lg shadow-sm border px-3 py-2 ${className}`}>
+    <div
+      className={`flex items-center space-x-2 bg-white rounded-lg shadow-sm border px-3 py-2 ${className}`}
+    >
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center space-x-2">
               <Clock className={`h-4 w-4 ${getTimeColor(timeRemaining)}`} />
-              <span className={`text-sm font-medium ${getTimeColor(timeRemaining)}`}>
+              <span
+                className={`text-sm font-medium ${getTimeColor(timeRemaining)}`}
+              >
                 {formatTimeRemaining(timeRemaining)}
               </span>
             </div>
@@ -132,7 +135,9 @@ export function SessionStatusBar({ className = '' }: SessionStatusBarProps) {
                   disabled={isRefreshing}
                   className="h-6 px-2"
                 >
-                  <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`}
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>

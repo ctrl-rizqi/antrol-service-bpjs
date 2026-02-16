@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { authService } from '@/services/auth'
-import { User } from '@/services/auth'
-import { isTokenExpired, getTimeUntilTokenExpires, willTokenExpireSoon } from '@/utils/token'
-
-// Re-export for backward compatibility
-export { useAuth } from '@/hooks/use-auth'
+import type { User } from '@/services/auth'
+import {
+  isTokenExpired,
+  getTimeUntilTokenExpires,
+  willTokenExpireSoon,
+} from '@/utils/token'
 
 interface AuthContextType {
   user: User | null
@@ -90,7 +91,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string) => {
     try {
       const response = await authService.login(username, password)
-      
+
       if (response.success) {
         authService.setToken(response.data.token)
         authService.setUser(response.data.user)
@@ -114,7 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const refreshAuth = async (): Promise<boolean> => {
     try {
       const response = await authService.refreshToken()
-      
+
       if (response?.success) {
         authService.setToken(response.data.token)
         setTimeUntilExpiration(getTimeUntilTokenExpires(response.data.token))
@@ -132,11 +133,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!token || isTokenExpired(token)) {
       return 'expired'
     }
-    
+
     if (willTokenExpireSoon(token, 300)) {
       return 'expiring-soon'
     }
-    
+
     return 'valid'
   }
 

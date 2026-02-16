@@ -32,23 +32,24 @@ export function useTokenExpiration(options: UseTokenExpirationOptions = {}) {
       if (authService.isTokenExpired(token)) {
         setIsTokenExpiring(false)
         setTimeUntilExpiry(0)
-        
+
         if (autoLogout) {
           // Show user-friendly message
-          toast({
-            title: 'Sesi Telah Berakhir',
-            description: 'Untuk keamanan, sesi Anda telah berakhir. Silakan login kembali.',
-            variant: 'destructive',
+          toast('Sesi Telah Berakhir', {
+            description:
+              'Untuk keamanan, sesi Anda telah berakhir. Silakan login kembali.',
+
             duration: 5000,
           })
-          
+
           // Execute callback if provided
           if (onTokenExpired) {
             onTokenExpired()
           } else {
             // Default behavior: logout and redirect
             logout()
-            navigate({ to: '/login?expired=true' })
+            // navigate({ to: 'login?expired=true' })
+            navigate({ to: '/login', params: { expired: true } })
           }
         }
         return
@@ -63,18 +64,18 @@ export function useTokenExpiration(options: UseTokenExpirationOptions = {}) {
 
         if (timeRemaining > 0) {
           setTimeUntilExpiry(timeRemaining)
-          
+
           // Check if within warning threshold
           const warningTimeMs = warningThreshold * 60 * 1000
           if (timeRemaining <= warningTimeMs) {
             setIsTokenExpiring(true)
-            
+
             // Show warning toast (only once)
-            if (timeRemaining > warningTimeMs - 30000) { // Show within first 30 seconds of warning period
-              toast({
-                title: 'Sesi Akan Berakhir',
+            if (timeRemaining > warningTimeMs - 30000) {
+              // Show within first 30 seconds of warning period
+              toast('Sesi Akan Berakhir', {
                 description: `Sesi Anda akan berakhir dalam ${Math.ceil(timeRemaining / 60000)} menit. Simpan pekerjaan Anda.`,
-                variant: 'warning',
+
                 duration: 4000,
               })
             }
@@ -114,28 +115,25 @@ export function useTokenExpiration(options: UseTokenExpirationOptions = {}) {
     try {
       const result = await authService.refreshToken()
       if (result?.success) {
-        toast({
-          title: 'Sesi Diperpanjang',
+        toast('Sesi Diperpanjang', {
           description: 'Sesi Anda telah berhasil diperpanjang.',
-          variant: 'success',
+
           duration: 3000,
         })
         return true
       } else {
-        toast({
-          title: 'Gagal Memperpanjang',
+        toast.error('Gagal Memperpanjang', {
           description: 'Tidak dapat memperpanjang sesi. Silakan login kembali.',
-          variant: 'destructive',
+
           duration: 4000,
         })
         return false
       }
     } catch (error) {
       console.error('Failed to extend session:', error)
-      toast({
-        title: 'Terjadi Kesalahan',
+      toast.error('Terjadi Kesalahan', {
         description: 'Terjadi kesalahan saat memperpanjang sesi.',
-        variant: 'destructive',
+
         duration: 4000,
       })
       return false

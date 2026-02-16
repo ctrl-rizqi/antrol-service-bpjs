@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatExpirationTime } from '@/utils/token'
 import { Badge } from '@/components/ui/badge'
@@ -14,7 +14,9 @@ import { toast } from 'sonner'
 
 export function TokenStatusBadge() {
   const { checkTokenStatus, timeUntilExpiration, refreshAuth } = useAuth()
-  const [status, setStatus] = useState<'valid' | 'expired' | 'expiring-soon'>('valid')
+  const [status, setStatus] = useState<'valid' | 'expired' | 'expiring-soon'>(
+    'valid',
+  )
   const [timeLeft, setTimeLeft] = useState(timeUntilExpiration)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -53,7 +55,7 @@ export function TokenStatusBadge() {
       case 'expired':
         return 'destructive'
       case 'expiring-soon':
-        return 'warning'
+        return 'secondary'
       default:
         return 'default'
     }
@@ -90,15 +92,14 @@ export function TokenStatusBadge() {
           </TooltipTrigger>
           <TooltipContent>
             <p>
-              {status === 'expiring-soon' 
-                ? 'Token will expire soon. Click refresh to extend session.' 
-                : 'Token is valid'
-              }
+              {status === 'expiring-soon'
+                ? 'Token will expire soon. Click refresh to extend session.'
+                : 'Token is valid'}
             </p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      
+
       {status === 'expiring-soon' && (
         <Button
           variant="ghost"
@@ -107,7 +108,9 @@ export function TokenStatusBadge() {
           disabled={isRefreshing}
           className="h-6 px-2"
         >
-          <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`}
+          />
         </Button>
       )}
     </div>
@@ -137,7 +140,8 @@ export function TokenExpirationWarning() {
               Session akan segera berakhir
             </p>
             <p className="text-xs text-yellow-600">
-              Token anda akan kedaluarsa dalam beberapa menit. Simpan pekerjaan anda untuk menghindari kehilangan data.
+              Token anda akan kedaluarsa dalam beberapa menit. Simpan pekerjaan
+              anda untuk menghindari kehilangan data.
             </p>
           </div>
         </div>
