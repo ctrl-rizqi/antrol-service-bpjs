@@ -117,6 +117,17 @@ export const authService = {
     }
   },
 
+  isTokenExpiringSoon: (token: string, thresholdSeconds: number = 300): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      const currentTime = Math.floor(Date.now() / 1000)
+      const timeUntilExpiry = payload.exp - currentTime
+      return timeUntilExpiry > 0 && timeUntilExpiry <= thresholdSeconds
+    } catch (error) {
+      return false
+    }
+  },
+
   validateToken: async (): Promise<boolean> => {
     const token = authService.getToken()
     if (!token) return false

@@ -3,7 +3,6 @@ import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { Toaster } from '@/components/ui/sonner'
-import { TokenExpiryWarning } from '@/components/auth/token-expiry-warning'
 
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: () => {
@@ -22,7 +21,6 @@ function RouteComponent() {
       <SidebarInset>
         <Outlet />
         <Toaster />
-        <TokenExpiryWarning warningThreshold={10} />
       </SidebarInset>
     </SidebarProvider>
   )

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
-import { formatExpirationTime } from '@/utils/token'
+import { RefreshCw, Clock, AlertTriangle } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
+import { authService } from '@/services/auth'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, Clock, AlertTriangle } from 'lucide-react'
 import {
   Tooltip,
   TooltipContent,
@@ -12,39 +12,83 @@ import {
 } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
 
+const formatExpirationTime = (milliseconds: number): string => {
+  const totalSeconds = Math.floor(milliseconds / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`
+  } else {
+    return `${seconds}s`
+  }
+}
+
 export function TokenStatusBadge() {
-  const { checkTokenStatus, timeUntilExpiration, refreshAuth } = useAuth()
+  const { logout } = useAuth()
   const [status, setStatus] = useState<'valid' | 'expired' | 'expiring-soon'>(
     'valid',
   )
-  const [timeLeft, setTimeLeft] = useState(timeUntilExpiration)
+  const [timeLeft, setTimeLeft] = useState<number>(0)
   const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const checkTokenStatus = (): 'valid' | 'expired' | 'expiring-soon' => {
+    const token = authService.getToken()
+    if (!token || authService.isTokenExpired(token)) {
+      return 'expired'
+    }
+
+    if (authService.isTokenExpiringSoon(token, 300)) {
+      return 'expiring-soon'
+    }
+
+    return 'valid'
+  }
+
+  const getTimeUntilExpiration = (): number => {
+    const token = authService.getToken()
+    if (!token) return 0
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      const expiryTime = payload.exp * 1000
+      const currentTime = Date.now()
+      return Math.max(0, expiryTime - currentTime)
+    } catch {
+      return 0
+    }
+  }
 
   useEffect(() => {
     setStatus(checkTokenStatus())
-    setTimeLeft(timeUntilExpiration)
-  }, [timeUntilExpiration, checkTokenStatus])
+    setTimeLeft(getTimeUntilExpiration())
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
       setStatus(checkTokenStatus())
-      setTimeLeft(timeUntilExpiration)
+      setTimeLeft(getTimeUntilExpiration())
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [timeUntilExpiration, checkTokenStatus])
+  }, [])
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true)
     try {
-      const success = await refreshAuth()
-      if (success) {
+      const result = await authService.refreshToken()
+      if (result?.success) {
+        authService.setToken(result.data.token)
         toast.success('Token refreshed successfully')
+        setStatus('valid')
+        setTimeLeft(getTimeUntilExpiration())
       } else {
         toast.error('Failed to refresh token')
+        logout()
       }
     } catch (error) {
       toast.error('Token refresh failed')
+      logout()
     } finally {
       setIsRefreshing(false)
     }
@@ -118,13 +162,25 @@ export function TokenStatusBadge() {
 }
 
 export function TokenExpirationWarning() {
-  const { checkTokenStatus } = useAuth()
   const [showWarning, setShowWarning] = useState(false)
+
+  const checkTokenStatus = (): 'valid' | 'expired' | 'expiring-soon' => {
+    const token = authService.getToken()
+    if (!token || authService.isTokenExpired(token)) {
+      return 'expired'
+    }
+
+    if (authService.isTokenExpiringSoon(token, 300)) {
+      return 'expiring-soon'
+    }
+
+    return 'valid'
+  }
 
   useEffect(() => {
     const status = checkTokenStatus()
     setShowWarning(status === 'expiring-soon')
-  }, [checkTokenStatus])
+  }, [])
 
   if (!showWarning) {
     return null

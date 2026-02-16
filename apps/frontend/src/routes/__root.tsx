@@ -3,7 +3,7 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
-import { TokenExpirationWarning } from '@/components/auth/TokenStatus'
+import { TokenExpiryWarning } from '@/components/auth/token-expiry-warning'
 
 import type { QueryClient } from '@tanstack/react-query'
 
@@ -15,7 +15,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: () => (
     <>
       <Outlet />
-      <TokenExpirationWarning />
+      <TokenExpiryWarning warningThreshold={10} />
       <TanStackDevtools
         config={{
           position: 'bottom-right',

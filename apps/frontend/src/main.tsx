@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 
 import * as TanStackQueryProvider from './integrations/tanstack-query/root-provider.tsx'
-import { AuthProvider } from './hooks/use-auth'
+import { AuthProvider } from '@/hooks/use-auth'
 
 import { routeTree } from './routeTree.gen'
 

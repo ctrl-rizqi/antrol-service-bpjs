@@ -7,7 +7,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { NavProjects } from '@/components/nav-projects'
 import { NavUser } from '@/components/nav-user'
 import { TeamSwitcher } from '@/components/team-switcher'
-import { SessionStatusBar } from '@/components/auth/session-status-bar'
+import { TokenStatusBadge } from '@/components/auth/TokenStatus'
 import {
   Sidebar,
   SidebarContent,
@@ -91,7 +91,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <div className="px-3 py-2">
-          <SessionStatusBar className="w-full" />
+          <TokenStatusBadge />
         </div>
         <NavUser user={userData} onLogout={handleLogout} />
       </SidebarFooter>
