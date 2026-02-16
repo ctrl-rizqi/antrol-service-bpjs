@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import jwt, { SignOptions } from "jsonwebtoken";
 import prisma from "../lib/prisma";
-import { authenticateToken, AuthRequest } from "../middleware/auth";
+import { authenticateToken, AuthRequest, JwtPayload } from "../middleware/auth";
 
 const router: Router = Router();
 
@@ -78,6 +78,71 @@ router.post("/login", async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Login error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
+router.post("/refresh", authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
+  
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: BigInt(authReq.user!.id) },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        role: true,
+        permissions: true,
+        isActive: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is disabled",
+      });
+    }
+
+    const secret = process.env.JWT_SECRET || "your-secret-key";
+    const expiresIn = process.env.JWT_EXPIRES_IN || "24h";
+
+    if (!secret) {
+      throw new Error("JWT_SECRET not configured");
+    }
+
+    // Generate new token
+    const newToken = jwt.sign(
+      {
+        id: String(user.id),
+        username: user.username,
+        role: user.role,
+        permissions: user.permissions,
+      },
+      secret,
+      { expiresIn } as SignOptions,
+    );
+
+    res.json({
+      success: true,
+      message: "Token refreshed successfully",
+      data: {
+        token: newToken,
+      },
+    });
+  } catch (error) {
+    console.error("Token refresh error:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",

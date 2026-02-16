@@ -305,6 +305,30 @@ You can find out everything you need to know on how to use TanStack Store in the
 
 Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
 
+## Authentication & Token Expiration
+
+This application implements a secure JWT-based authentication system with automatic token expiration handling:
+
+### Token Expiration Features
+- **Automatic Session Management**: Tokens expire after 24 hours for security
+- **Pre-expiration Warnings**: Users receive warnings 10 minutes before token expiration
+- **Session Extension**: Users can extend their session without re-authenticating
+- **Graceful Logout**: Automatic logout with clear user notifications when token expires
+
+### User Experience
+- **Visual Indicators**: Session status bar shows remaining time
+- **Warning Notifications**: Toast notifications alert users before expiration
+- **Auto-refresh**: System attempts to refresh tokens automatically
+- **Clear Error Messages**: User-friendly messages explain session status
+
+### Technical Implementation
+- JWT tokens with configurable expiration (default: 24h)
+- Automatic token refresh mechanism
+- Request queuing during token refresh
+- Comprehensive error handling for expired tokens
+
+For detailed user guide, see [Authentication Guide](./src/docs/authentication-guide.md)
+
 # Learn More
 
 You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).

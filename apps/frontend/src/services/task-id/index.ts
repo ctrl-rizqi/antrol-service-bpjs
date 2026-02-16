@@ -49,3 +49,32 @@ export const syncVisitEvent = async (kodebooking: string) => {
 
   return response.data
 }
+
+export type BulkRepairResponse = {
+  success: boolean
+  message: string
+  data: {
+    totalProcessed: number
+    successCount: number
+    failedCount: number
+    results: Array<{
+      visit_id: string
+      status: 'success' | 'failed'
+      message: string
+      data?: VisitEvent & { EventTasks: EventTask[] }
+      error?: string
+    }>
+  }
+}
+
+export const bulkRepairTaskId = async (startDate: string, endDate: string) => {
+  const response = await api.post<BulkRepairResponse>(
+    '/task-id/bulk-repair',
+    {
+      startDate,
+      endDate,
+    },
+  )
+
+  return response.data
+}

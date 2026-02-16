@@ -28,6 +28,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 import { useQueryClient } from '@tanstack/react-query'
+import { BulkRepairDialog } from '@/components/task-id/bulk-repair-dialog'
 
 export const Route = createFileRoute('/dashboard/task-id/')({
   beforeLoad: () => {
@@ -116,6 +117,7 @@ function RouteComponent() {
               Singkronasi
             </Button>
           </form>
+          <BulkRepairDialog />
         </div>
         <DataTable columns={columns} data={data?.data || []} />
         <div className="flex-1">

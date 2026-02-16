@@ -9,6 +9,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Fragment } from 'react/jsx-runtime'
+import { TokenStatusBadge } from './auth/TokenStatus'
 
 export interface HeaderProps {
   breadcrumb?: {
@@ -51,6 +52,9 @@ export default function Header({ breadcrumb }: HeaderProps) {
             </BreadcrumbList>
           </Breadcrumb>
         )}
+      </div>
+      <div className="ml-auto flex items-center gap-2 px-4">
+        <TokenStatusBadge />
       </div>
     </header>
   )

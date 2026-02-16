@@ -4,6 +4,8 @@ import {
   syncTaskIdRegistration,
   syncVisitEvent,
   type syncVisitEventResponse,
+  bulkRepairTaskId,
+  type BulkRepairResponse,
 } from '@/services/task-id'
 import {
   useMutation,
@@ -62,6 +64,24 @@ export const useSyncVisitEvent = (
   return useMutation({
     mutationFn: async (kodebooking: string) => {
       const result = await syncVisitEvent(kodebooking)
+      return { data: result }
+    },
+    ...options,
+  })
+}
+
+export const useBulkRepairTaskId = (
+  options?: UseMutationOptions<
+    {
+      data: BulkRepairResponse
+    },
+    Error,
+    { startDate: string; endDate: string }
+  >,
+) => {
+  return useMutation({
+    mutationFn: async ({ startDate, endDate }: { startDate: string; endDate: string }) => {
+      const result = await bulkRepairTaskId(startDate, endDate)
       return { data: result }
     },
     ...options,

@@ -1,8 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { AlertCircle, Clock } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { SessionExpiredNotification } from '@/components/auth/session-expired-notification'
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
@@ -15,6 +18,19 @@ function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [showSessionExpired, setShowSessionExpired] = useState(false)
+
+  useEffect(() => {
+    // Cek jika user datang dari redirect token expired
+    const urlParams = new URLSearchParams(window.location.search)
+    const expired = urlParams.get('expired')
+    
+    if (expired === 'true') {
+      setShowSessionExpired(true)
+      // Hapus parameter dari URL
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [])
 
   if (isAuthenticated) {
     navigate({ to: '/dashboard' })
@@ -44,9 +60,19 @@ function LoginPage() {
           <p className="mt-2 text-sm text-gray-600">Masukkan username dan password</p>
         </div>
 
+        {showSessionExpired && (
+          <Alert className="border-orange-200 bg-orange-50">
+            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              Sesi Anda telah berakhir untuk keamanan. Silakan login kembali.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+            <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-2" />
               {error}
             </div>
           )}

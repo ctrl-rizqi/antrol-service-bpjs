@@ -42,6 +42,23 @@ export const authenticateToken = (
     (req as AuthRequest).user = decoded;
     next();
   } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({
+        success: false,
+        message: "Token has expired",
+        code: "TOKEN_EXPIRED",
+        expiredAt: error.expiredAt,
+      });
+    }
+    
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+        code: "INVALID_TOKEN",
+      });
+    }
+
     return res.status(403).json({
       success: false,
       message: "Invalid or expired token",
