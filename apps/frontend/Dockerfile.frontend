@@ -16,6 +16,9 @@ RUN pnpm install
 # Copy source code
 COPY . .
 
+# Build shared package first
+RUN pnpm run --filter @antrol/shared build
+
 # Build frontend
 RUN pnpm run --filter frontend build
 
