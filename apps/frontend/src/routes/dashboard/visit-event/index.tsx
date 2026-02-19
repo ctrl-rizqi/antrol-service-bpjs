@@ -70,7 +70,9 @@ function RouteComponent() {
 
   const syncBatchMutation = useSyncBatchVisitEvent({
     onSuccess: (data) => {
-      toast.success(`Sync batch selesai: ${data.summary.success}/${data.summary.total} berhasil`)
+      toast.success(
+        `Sync batch selesai: ${data.summary.success}/${data.summary.total} berhasil`,
+      )
     },
     onError: (error) => {
       toast.error(`Sync batch gagal: ${error.message}`)
@@ -146,6 +148,8 @@ function RouteComponent() {
             />
             {syncBatchMutation.isPending ? 'Syncing...' : 'Sinkronasi Batch'}
           </Button>
+
+          {/* Evil Button 😈 */}
         </div>
         <DataTable
           columns={columns}

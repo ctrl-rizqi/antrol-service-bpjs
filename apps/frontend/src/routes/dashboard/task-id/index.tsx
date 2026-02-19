@@ -1,6 +1,6 @@
 import { DataTable } from '@/components/data-table'
 import Header from '@/components/Header'
-import { columns } from '@/components/taks-id/columns'
+import { columns } from '@/components/task-id/columns'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSyncTaskId, useTaskId } from '@/hooks/task-id'
@@ -37,8 +37,9 @@ export const Route = createFileRoute('/dashboard/task-id/')({
       throw redirect({ to: '/login' })
     }
     const user = JSON.parse(userStr)
-    const hasPermission = user.role === 'admin' || 
-      user.permissions?.includes('task-id:access') || 
+    const hasPermission =
+      user.role === 'admin' ||
+      user.permissions?.includes('task-id:access') ||
       user.permissions?.includes('*')
     if (!hasPermission) {
       throw redirect({ to: '/dashboard' })

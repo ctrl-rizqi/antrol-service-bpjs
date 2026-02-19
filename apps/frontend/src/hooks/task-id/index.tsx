@@ -6,6 +6,7 @@ import {
   type syncVisitEventResponse,
   bulkRepairTaskId,
   type BulkRepairResponse,
+  fetchWeeklyStats,
 } from '@/services/task-id'
 import {
   useMutation,
@@ -85,5 +86,13 @@ export const useBulkRepairTaskId = (
       return { data: result }
     },
     ...options,
+  })
+}
+
+export const useWeeklyStats = () => {
+  return useQuery({
+    queryKey: ['task-id', 'stats', 'weekly'],
+    queryFn: fetchWeeklyStats,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }

@@ -78,3 +78,25 @@ export const bulkRepairTaskId = async (startDate: string, endDate: string) => {
 
   return response.data
 }
+
+export type WeeklyStatsData = {
+  date: string
+  day: string
+  selesai: number
+  belum_terkirim: number
+}
+
+export type WeeklyStatsResponse = {
+  success: boolean
+  data: WeeklyStatsData[]
+  summary: {
+    total_selesai: number
+    total_belum_terkirim: number
+    total_keseluruhan: number
+  }
+}
+
+export const fetchWeeklyStats = async () => {
+  const response = await api.get<WeeklyStatsResponse>('/task-id/stats/weekly')
+  return response.data
+}

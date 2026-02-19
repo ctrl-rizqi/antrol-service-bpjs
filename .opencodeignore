@@ -1,0 +1,46 @@
+# --- Folder Dependensi (Wajib di-ignore agar hemat token) ---
+node_modules/
+vendor/
+.gradle/
+.m2/             # Folder cache Maven (sangat besar!)
+target/          # Output build Java
+dist/
+build/
+out/
+
+# --- File Lingkungan & Rahasia (Keamanan) ---
+.env
+.env.*
+*.pem
+*.key
+.secret*
+credentials.json
+
+# --- File Binari & Media ---
+*.exe
+*.dll
+*.so
+*.class
+*.jar
+*.war
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.pdf
+
+# --- Log & Temp ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.temp/
+.tmp/
+
+# --- Folder IDE & OS ---
+.vscode/
+.idea/           # Penting jika kamu pakai IntelliJ
+.DS_Store
+Thumbs.db
+.git/            # OpenCode sudah paham git, tidak perlu baca isinya

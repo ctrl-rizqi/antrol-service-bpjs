@@ -526,4 +526,92 @@ router.post("/bulk-repair", async (req: Request, res: Response) => {
   }
 });
 
+// Get weekly registration statistics
+router.get("/stats/weekly", async (req: Request, res: Response) => {
+  try {
+    // Get date range for last 7 days
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    today.setHours(23, 59, 59, 999);
+
+    // Query to get daily stats grouped by status_kunjungan
+    const stats = await prisma.$queryRaw`
+      SELECT 
+        DATE(tanggal) as date,
+        status_kunjungan,
+        COUNT(*) as count
+      FROM RegistrationSnapshot
+      WHERE tanggal >= ${sevenDaysAgo}
+        AND tanggal <= ${today}
+      GROUP BY DATE(tanggal), status_kunjungan
+      ORDER BY DATE(tanggal) ASC
+    `;
+
+    // Format data for chart
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    
+    interface ChartDataPoint {
+      date: string;
+      day: string;
+      selesai: number;
+      belum_terkirim: number;
+    }
+    
+    const chartData: ChartDataPoint[] = [];
+
+    // Create array of last 7 days
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      
+      const dateStr = date.toISOString().split('T')[0];
+      const dayName = days[date.getDay()];
+      
+      chartData.push({
+        date: dateStr,
+        day: dayName,
+        selesai: 0,
+        belum_terkirim: 0,
+      });
+    }
+
+    // Fill in the counts from query results
+    (stats as any[]).forEach((row: any) => {
+      const dateStr = new Date(row.date).toISOString().split('T')[0];
+      const dataPoint = chartData.find(d => d.date === dateStr);
+      if (dataPoint) {
+        if (row.status_kunjungan === 1) {
+          dataPoint.selesai = Number(row.count);
+        } else {
+          dataPoint.belum_terkirim = Number(row.count);
+        }
+      }
+    });
+
+    // Calculate totals
+    const totalSelesai = chartData.reduce((sum, d) => sum + d.selesai, 0);
+    const totalBelumTerkirim = chartData.reduce((sum, d) => sum + d.belum_terkirim, 0);
+
+    return res.json({
+      success: true,
+      data: chartData,
+      summary: {
+        total_selesai: totalSelesai,
+        total_belum_terkirim: totalBelumTerkirim,
+        total_keseluruhan: totalSelesai + totalBelumTerkirim,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching weekly stats:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Gagal mengambil statistik mingguan",
+      error: (error as Error).message,
+    });
+  }
+});
+
 export default router;
